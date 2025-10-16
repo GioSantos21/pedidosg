@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null'); // Clave foránea a la tabla 'branches'
             $table->string('name');
             $table->string('email')->unique();
+            $table->enum('role', ['admin', 'manager', 'production'])->default('manager'); // Roles: admin (Casa Matriz), manager (Sucursal), production (Producción)
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
