@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\CategoryController; // Importar
-use App\Http\Controllers\ProductController;   // Importar
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -36,9 +37,18 @@ Route::middleware('auth')->group(function () {
 
         // Ruta de Dashboard Administrativo/Producción
         Route::get('/dashboard', function () {
-            return view('admin.dashboard'); // Crearemos esta vista más adelante
+            return view('admin.dashboard');
         })->name('dashboard');
     });
+
+    // Rutas de Recurso para Órdenes
+    Route::middleware(['auth', 'role:manager|admin|production'])->group(function () {
+        // Definimos solo los métodos que usaremos en el CRUD de Pedidos
+        Route::resource('orders', OrderController::class)->only([
+            'index', 'create', 'store', 'show'
+        ]);
+});
+
 });
 
 require __DIR__.'/auth.php';
