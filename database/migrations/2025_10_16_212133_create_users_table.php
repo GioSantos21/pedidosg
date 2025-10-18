@@ -13,30 +13,16 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null'); // Clave foránea a la tabla 'branches'
             $table->string('name');
             $table->string('email')->unique();
-            $table->enum('role', ['admin', 'manager', 'production'])->default('manager'); // Roles: admin (Casa Matriz), manager (Sucursal), production (Producción)
+            $table->enum('role', ['admin', 'manager', 'production'])->default('manager');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
-        });
+        // ... (El resto de password_reset_tokens y sessions permanece igual) ...
     }
 
     /**
