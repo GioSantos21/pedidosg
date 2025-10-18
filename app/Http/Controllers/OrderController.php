@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // ¡Importante!
 use Illuminate\Auth\Access\AuthorizationException; // ¡Importante para la seguridad!
@@ -34,7 +35,14 @@ class OrderController extends Controller
      */
     public function create()
     {
-        //
+        if (auth()->user()->role !== 'manager') {
+            abort(403, 'Solo los gerentes de sucursal pueden crear pedidos.');
+        }
+
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $branchName = auth()->user()->branch->name ?? 'Sucursal sin asignar';
+
+        return view('orders.create', compact('products', 'branchName'));
     }
 
     /**
@@ -115,24 +123,112 @@ class OrderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Order $order)
     {
-        //
+        // 1. Restricción de Estado: Solo se puede editar si está PENDIENTE
+        if ($order->status !== 'pending') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', 'El pedido N°' . $order->id . ' ya no se puede modificar, ya que su estado es "' . ucfirst($order->status) . '".');
+        }
+
+        // 2. Restricción de Autoría: Solo el creador original o un Admin puede editar
+        $user = auth()->user();
+        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
+            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede editarlo.');
+        }
+
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+
+        // Cargar los items actuales en el formato necesario para el formulario
+        $currentItems = $order->items->map(fn($item) => [
+            'product_id' => $item->product_id,
+            'quantity' => $item->quantity,
+        ])->toJson(); // Convertir a JSON para Alpine.js
+
+        return view('orders.edit', compact('order', 'products', 'currentItems'));
+
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Order $order)
     {
-        //
+        // 1. Restricción de Estado antes de cualquier acción
+        if ($order->status !== 'pending') {
+             return redirect()->route('orders.show', $order)
+                ->with('error', 'El pedido N°' . $order->id . ' ya no se puede actualizar, ya que su estado es "' . ucfirst($order->status) . '".');
+        }
+
+        // 2. Restricción de Autoría (Opcional, ya cubierto por edit, pero bueno para seguridad)
+        $user = auth()->user();
+        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
+            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede actualizarlo.');
+        }
+
+        // 3. Validación
+        $request->validate([
+            'notes' => 'nullable|string|max:500',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Actualizar el Pedido Maestro
+            $order->update([
+                'notes' => $request->input('notes'),
+            ]);
+
+            // Eliminar los items antiguos e insertar los nuevos (Método simple de sincronización)
+            $order->items()->delete();
+
+            $orderItems = [];
+            foreach ($request->input('items') as $item) {
+                if (!empty($item['product_id']) && $item['quantity'] > 0) {
+                    $orderItems[] = new OrderItem([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'order_id' => $order->id, // Necesario si usamos createMany o saveMany
+                    ]);
+                }
+            }
+
+            $order->items()->saveMany($orderItems);
+            DB::commit();
+
+            return redirect()->route('orders.show', $order)->with('success', 'Pedido N°' . $order->id . ' actualizado exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error("Error al actualizar pedido: " . $e->getMessage());
+            return back()->withInput()->withErrors('Hubo un error al actualizar el pedido. Por favor, contacta a soporte.');
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Order $order)
     {
-        //
+
+        // 1. Restricción de Estado: Solo se puede eliminar si está PENDIENTE
+        if ($order->status !== 'pending') {
+             return back()->with('error', 'No se puede eliminar el pedido N°' . $order->id . ' porque su estado es "' . ucfirst($order->status) . '".');
+        }
+
+        // 2. Restricción de Autoría: Solo el creador original o un Admin puede eliminar
+        $user = auth()->user();
+        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
+            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede eliminarlo.');
+        }
+
+        // Eliminación en cascada: Los OrderItems se eliminan automáticamente si la migración lo permite
+        $orderId = $order->id;
+        $order->delete();
+
+        return redirect()->route('orders.index')->with('success', 'Pedido N°' . $orderId . ' y sus ítems eliminados correctamente.');
+
     }
 }

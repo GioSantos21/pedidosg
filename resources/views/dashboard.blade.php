@@ -28,7 +28,7 @@
                     </p>
                 @endif
             </div>
-{{--
+
             <!-- SECCIÓN DE ACCESOS RÁPIDOS POR ROL -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -43,7 +43,7 @@
                             </p>
                         </div>
                     </div>
-                </a> --}}
+                </a>
 
                 <!-- 2. MÓDULO ADMINISTRATIVO (Solo Admin y Production) -->
                 @if (in_array(Auth::user()->role, ['admin', 'production']))
