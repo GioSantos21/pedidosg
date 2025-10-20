@@ -2,233 +2,290 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // ¡Importante!
-use Illuminate\Auth\Access\AuthorizationException; // ¡Importante para la seguridad!
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * Lista los pedidos según el rol del usuario.
      */
     public function index()
     {
-        $user = auth()->user();
-        $query = Order::with(['branch', 'user']);
+        $user = Auth::user();
+        $query = Order::with(['user.branch', 'branch', 'items.product']);
 
-        // Filtrar por Sucursal si el rol es 'manager'
         if ($user->role === 'manager') {
+            // Un gerente solo ve los pedidos de su propia sucursal.
+            if ($user->branch_id === null) {
+                // Si no tiene sucursal asignada, no ve pedidos.
+                return view('orders.index', ['orders' => collect([])]);
+            }
             $query->where('branch_id', $user->branch_id);
         }
 
-        // Mostrar siempre los pedidos más recientes primero
-        $orders = $query->orderByDesc('id')->paginate(10);
+        // Paginamos los resultados para mejorar el rendimiento
+        $orders = $query->latest()->paginate(15);
 
         return view('orders.index', compact('orders'));
     }
 
     /**
      * Show the form for creating a new resource.
+     * Muestra el formulario para crear un pedido.
      */
     public function create()
     {
-        if (auth()->user()->role !== 'manager') {
-            abort(403, 'Solo los gerentes de sucursal pueden crear pedidos.');
+        $user = Auth::user();
+
+        // El gerente debe tener una sucursal asignada para poder crear un pedido.
+        if ($user->branch_id === null) {
+             return redirect()->route('dashboard')
+                             ->with('error', 'No tienes una sucursal asignada. Por favor, contacta a tu administrador para poder realizar pedidos.');
         }
 
-        $products = Product::where('is_active', true)->orderBy('name')->get();
-        $branchName = auth()->user()->branch->name ?? 'Sucursal sin asignar';
+        $branchName = $user->branch->name ?? 'Sucursal sin asignar';
+        $products = Product::orderBy('name')->get();
 
         return view('orders.create', compact('products', 'branchName'));
     }
 
     /**
      * Store a newly created resource in storage.
+     * Guarda un nuevo pedido y sus detalles (ítems) en una transacción.
      */
     public function store(Request $request)
     {
-        // 1. Validación de la Solicitud
-        $request->validate([
-            'notes' => 'nullable|string|max:500',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+        $user = Auth::user();
+
+        // 1. Verificar si el usuario puede crear el pedido (tiene sucursal asignada)
+        if ($user->branch_id === null) {
+            return back()->with('error', 'Error de Seguridad: Tu usuario no tiene una sucursal válida asignada.');
+        }
+
+        // 2. Validación de los datos
+        $validatedData = $request->validate([
+            'notes' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'exists:products,id'], // Debe ser un ID de producto existente
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+        ], [
+            'items.min' => 'Debes añadir al menos un producto al pedido.',
+            'items.*.product_id.required' => 'Debes seleccionar un producto para cada ítem.',
+            'items.*.product_id.exists' => 'El producto seleccionado no es válido.',
+            'items.*.quantity.required' => 'Debes especificar la cantidad para cada producto.',
+            'items.*.quantity.min' => 'La cantidad debe ser al menos 1.'
         ]);
 
-        // 2. Inicio de la Transacción de Base de Datos
-        DB::beginTransaction();
 
         try {
-            // 3. Crear el Pedido Maestro (Order)
+            DB::beginTransaction();
+
+            // 3. Crear el pedido maestro (Order)
             $order = Order::create([
-                'branch_id' => auth()->user()->branch_id, // Asignado automáticamente
-                'user_id' => auth()->id(),              // Usuario autenticado
-                'status' => 'pending',                  // Estado inicial
-                'notes' => $request->input('notes'),
+                'branch_id' => $user->branch_id,
+                'user_id' => $user->id,
+                'notes' => $validatedData['notes'],
+                'status' => 'Pendiente', // Siempre comienza como pendiente
             ]);
 
-            // 4. Crear los Ítems de Pedido (Detalle)
+            // 4. Crear los ítems del pedido (OrderItems)
             $orderItems = [];
-            foreach ($request->input('items') as $item) {
-                $orderItems[] = new OrderItem([
+            foreach ($validatedData['items'] as $item) {
+                $orderItems[] = [
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                ]);
+                    // NOTA: 'order_id' es añadido automáticamente por createMany
+                ];
             }
 
-            // Guardar todos los ítems de una vez
-            $order->items()->saveMany($orderItems);
+            // Usar la relación para guardar múltiples ítems a la vez
+            $order->items()->createMany($orderItems);
 
-            // 5. Finalizar la Transacción
             DB::commit();
 
-            return redirect()->route('orders.show', $order)->with('success', 'Pedido creado exitosamente y enviado a Producción.');
+            return redirect()->route('orders.show', $order)->with('success', '¡Pedido registrado con éxito! Pendiente de ser procesado por Producción.');
 
         } catch (\Exception $e) {
-            // Si algo falla, revierte todos los cambios
             DB::rollBack();
+            // --- CAMBIO CLAVE PARA DEBUGGING ---
+            // En lugar de un mensaje genérico, mostramos el error exacto para diagnosticarlo.
+            \Log::error("Error al guardar pedido: " . $e->getMessage());
 
-            // Opcional: Loggea el error
-            // \Log::error('Error al crear pedido: ' . $e->getMessage());
-
-            return back()->withInput()->withErrors('Hubo un error al procesar el pedido. Intenta de nuevo.');
+            // MUESTRA EL MENSAJE DE ERROR DIRECTAMENTE:
+            return back()->with('error', 'ERROR DE LA BASE DE DATOS: ' . $e->getMessage())->withInput();
+            // --- FIN DEL CAMBIO CLAVE ---
         }
-        }
+    }
 
     /**
      * Display the specified resource.
+     * Muestra los detalles de un pedido.
      */
     public function show(Order $order)
     {
-        // 1. Cargar el detalle del pedido (Items y sus Productos)
-        $order->load(['branch', 'user', 'items.product']);
+        // Se carga con eager loading para evitar múltiples consultas
+        $order->load(['user.branch', 'branch', 'items.product']);
 
-        // 2. Control de Acceso (Autorización)
-        $user = auth()->user();
-
-        // El gerente solo puede ver sus propios pedidos de sucursal
-        if ($user->role === 'manager' && $order->branch_id !== $user->branch_id) {
-            // Lanzar una excepción de autorización (error 403)
-            throw new AuthorizationException('No tienes permiso para ver este pedido.');
+        // Control de acceso: Solo el gerente de la sucursal, Admin o Producción pueden ver.
+        if (Auth::user()->role === 'manager' && Auth::user()->branch_id !== $order->branch_id) {
+            abort(403, 'Acceso denegado. Solo puedes ver pedidos de tu sucursal.');
         }
-
-        // Los roles admin y production pueden ver cualquier pedido
 
         return view('orders.show', compact('order'));
     }
 
     /**
      * Show the form for editing the specified resource.
+     * Muestra el formulario para editar un pedido.
      */
     public function edit(Order $order)
     {
-        // 1. Restricción de Estado: Solo se puede editar si está PENDIENTE
-        if ($order->status !== 'pending') {
-            return redirect()->route('orders.show', $order)
-                ->with('error', 'El pedido N°' . $order->id . ' ya no se puede modificar, ya que su estado es "' . ucfirst($order->status) . '".');
+        // Restricción: Solo si el pedido está PENDIENTE
+        if ($order->status !== 'Pendiente') {
+            return redirect()->route('orders.show', $order)->with('error', 'Solo se pueden editar pedidos con estado PENDIENTE.');
         }
 
-        // 2. Restricción de Autoría: Solo el creador original o un Admin puede editar
-        $user = auth()->user();
-        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
-            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede editarlo.');
+        // Control de acceso: Solo el gerente que lo creó o un administrador
+        if (Auth::user()->role === 'manager' && Auth::user()->id !== $order->user_id) {
+             abort(403, 'Acceso denegado. Solo puedes editar pedidos que registraste.');
         }
 
-        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $products = Product::orderBy('name')->get();
+        // Preparamos los ítems actuales para la vista de Alpine.js/Blade
+        $currentItems = $order->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+            ];
+        })->toJson();
 
-        // Cargar los items actuales en el formato necesario para el formulario
-        $currentItems = $order->items->map(fn($item) => [
-            'product_id' => $item->product_id,
-            'quantity' => $item->quantity,
-        ])->toJson(); // Convertir a JSON para Alpine.js
+        $branchName = $order->branch->name ?? 'N/A';
 
-        return view('orders.edit', compact('order', 'products', 'currentItems'));
-
+        return view('orders.edit', compact('order', 'products', 'currentItems', 'branchName'));
     }
 
     /**
      * Update the specified resource in storage.
+     * Actualiza el pedido (solo si está PENDIENTE)
      */
     public function update(Request $request, Order $order)
     {
-        // 1. Restricción de Estado antes de cualquier acción
-        if ($order->status !== 'pending') {
-             return redirect()->route('orders.show', $order)
-                ->with('error', 'El pedido N°' . $order->id . ' ya no se puede actualizar, ya que su estado es "' . ucfirst($order->status) . '".');
+        // Restricción: Solo si el pedido está PENDIENTE
+        if ($order->status !== 'Pendiente') {
+            return redirect()->route('orders.show', $order)->with('error', 'Solo se pueden modificar pedidos con estado PENDIENTE.');
         }
 
-        // 2. Restricción de Autoría (Opcional, ya cubierto por edit, pero bueno para seguridad)
-        $user = auth()->user();
-        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
-            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede actualizarlo.');
-        }
-
-        // 3. Validación
-        $request->validate([
-            'notes' => 'nullable|string|max:500',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+        $validatedData = $request->validate([
+            'notes' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+        ], [
+            'items.min' => 'Debes añadir al menos un producto al pedido.',
+            // ... (mensajes de validación)
         ]);
 
-        DB::beginTransaction();
         try {
-            // Actualizar el Pedido Maestro
+            DB::beginTransaction();
+
+            // 1. Actualizar el encabezado
             $order->update([
-                'notes' => $request->input('notes'),
+                'notes' => $validatedData['notes'],
             ]);
 
-            // Eliminar los items antiguos e insertar los nuevos (Método simple de sincronización)
+            // 2. Eliminar ítems antiguos
             $order->items()->delete();
 
+            // 3. Crear los ítems nuevos
             $orderItems = [];
-            foreach ($request->input('items') as $item) {
-                if (!empty($item['product_id']) && $item['quantity'] > 0) {
-                    $orderItems[] = new OrderItem([
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'order_id' => $order->id, // Necesario si usamos createMany o saveMany
-                    ]);
-                }
+            foreach ($validatedData['items'] as $item) {
+                $orderItems[] = [
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                ];
             }
+            $order->items()->createMany($orderItems);
 
-            $order->items()->saveMany($orderItems);
             DB::commit();
 
-            return redirect()->route('orders.show', $order)->with('success', 'Pedido N°' . $order->id . ' actualizado exitosamente.');
+            return redirect()->route('orders.show', $order)->with('success', 'Pedido actualizado con éxito.');
 
         } catch (\Exception $e) {
             DB::rollBack();
+            // --- CAMBIO CLAVE PARA DEBUGGING ---
             \Log::error("Error al actualizar pedido: " . $e->getMessage());
-            return back()->withInput()->withErrors('Hubo un error al actualizar el pedido. Por favor, contacta a soporte.');
+            return back()->with('error', 'ERROR DE LA BASE DE DATOS: ' . $e->getMessage())->withInput();
+            // --- FIN DEL CAMBIO CLAVE ---
         }
     }
 
     /**
+     * Método dedicado para que Producción cambie el estado del pedido.
+     */
+    public function updateStatus(Request $request, Order $order)
+    {
+        // Control de roles: Solo admin y production pueden cambiar el estado.
+        if (!Auth::user()->hasRole(['admin', 'production'])) {
+             abort(403, 'Acceso denegado. No tienes permisos para cambiar el estado.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['Pendiente', 'Confirmado', 'Anulado'])],
+        ]);
+
+        $status = $validated['status'];
+        $updateData = ['status' => $status];
+
+        // Si el estado es 'completed', registrar el tiempo de finalización
+        if ($status === 'Confirmado') {
+            $updateData['completed_at'] = now();
+        } elseif ($status !== 'Confirmado' && $order->completed_at !== null) {
+            // Si el estado vuelve a ser no-completado, limpia el timestamp
+            $updateData['completed_at'] = null;
+        }
+
+        try {
+            $order->update($updateData);
+
+            return back()->with('success', "El estado del pedido #{$order->id} se ha cambiado a {$status}.");
+        } catch (\Exception $e) {
+            \Log::error("Error al actualizar estado del pedido: " . $e->getMessage());
+            return back()->with('error', 'Error al actualizar el estado del pedido.');
+        }
+    }
+
+
+    /**
      * Remove the specified resource from storage.
+     * Elimina el pedido (solo si está PENDIENTE)
      */
     public function destroy(Order $order)
     {
-
-        // 1. Restricción de Estado: Solo se puede eliminar si está PENDIENTE
-        if ($order->status !== 'pending') {
-             return back()->with('error', 'No se puede eliminar el pedido N°' . $order->id . ' porque su estado es "' . ucfirst($order->status) . '".');
+        // Restricción: Solo si el pedido está PENDIENTE
+        if ($order->status !== 'Pendiente') {
+            return back()->with('error', 'Solo se pueden eliminar pedidos con estado PENDIENTE.');
         }
 
-        // 2. Restricción de Autoría: Solo el creador original o un Admin puede eliminar
-        $user = auth()->user();
-        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
-            throw new AuthorizationException('Solo el creador del pedido o un Administrador puede eliminarlo.');
+        // Control de acceso: Solo el gerente que lo creó o un administrador
+        if (Auth::user()->role === 'manager' && Auth::user()->id !== $order->user_id) {
+             abort(403, 'Acceso denegado. Solo puedes eliminar pedidos que registraste.');
         }
 
-        // Eliminación en cascada: Los OrderItems se eliminan automáticamente si la migración lo permite
-        $orderId = $order->id;
-        $order->delete();
-
-        return redirect()->route('orders.index')->with('success', 'Pedido N°' . $orderId . ' y sus ítems eliminados correctamente.');
-
+        try {
+            // Se eliminan los items en cascada por la configuración de la base de datos (o se podría hacer aquí)
+            $order->delete();
+            return redirect()->route('orders.index')->with('success', 'Pedido eliminado correctamente.');
+        } catch (\Exception $e) {
+            \Log::error("Error al eliminar pedido: " . $e->getMessage());
+            return back()->with('error', 'Hubo un error al intentar eliminar el pedido.');
+        }
     }
 }

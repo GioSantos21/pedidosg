@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
     // Crear un Gerente de Sucursal (role=manager)
     User::create([
         'name' => 'Gerente Norte',
-        'email' => 'gerente.norte@anthonys.com',
+        'email' => 'gerente@anthonys.com',
         'password' => Hash::make('password'),
         'role' => 'manager',
         'branch_id' => 2, // Asignado a Sucursal Zona Norte (Branch ID 2)

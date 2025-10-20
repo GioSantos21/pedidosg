@@ -6,18 +6,21 @@ use App\Models\Product;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class OrderItem extends Model
 {
-    protected $fillable = ['order_id', 'product_id', 'quantity'];
+    protected $fillable = [ 'product_id', 'quantity'];
 
     // Relación de muchos a uno: El ítem pertenece a un pedido
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
     // Relación de muchos a uno: El ítem corresponde a un producto
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
