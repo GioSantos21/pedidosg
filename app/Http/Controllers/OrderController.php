@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Branch;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -10,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+// Carbon ya no es necesario importarlo si usas now()
 
 class OrderController extends Controller
 {
@@ -22,7 +22,7 @@ class OrderController extends Controller
         $user = Auth::user();
         $query = Order::with(['user.branch', 'branch', 'items.product']);
 
-        if ($user->role === 'manager') {
+        if ($user->hasRole('manager')) {
             // Un gerente solo ve los pedidos de su propia sucursal.
             if ($user->branch_id === null) {
                 // Si no tiene sucursal asignada, no ve pedidos.
@@ -30,6 +30,9 @@ class OrderController extends Controller
             }
             $query->where('branch_id', $user->branch_id);
         }
+
+        // El método hasRole() ya resuelve la lógica.
+        // Producción y Admin ven todos los pedidos.
 
         // Paginamos los resultados para mejorar el rendimiento
         $orders = $query->latest()->paginate(15);
@@ -47,12 +50,17 @@ class OrderController extends Controller
 
         // El gerente debe tener una sucursal asignada para poder crear un pedido.
         if ($user->branch_id === null) {
-             return redirect()->route('dashboard')
-                             ->with('error', 'No tienes una sucursal asignada. Por favor, contacta a tu administrador para poder realizar pedidos.');
+            return redirect()->route('dashboard')
+                            ->with('error', 'No tienes una sucursal asignada. Por favor, contacta a tu administrador para poder realizar pedidos.');
         }
 
+        // Si tu vista create.blade.php necesita productos agrupados por categoría, usa:
+        // $products = Product::where('is_active', true)->get()->groupBy('category_id');
+        // Si solo los necesita en una lista plana, usa:
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+
+
         $branchName = $user->branch->name ?? 'Sucursal sin asignar';
-        $products = Product::orderBy('name')->get();
 
         return view('orders.create', compact('products', 'branchName'));
     }
@@ -94,6 +102,7 @@ class OrderController extends Controller
                 'user_id' => $user->id,
                 'notes' => $validatedData['notes'],
                 'status' => 'Pendiente', // Siempre comienza como pendiente
+                'requested_at' => now(), // Usamos now() de Laravel para registrar el tiempo
             ]);
 
             // 4. Crear los ítems del pedido (OrderItems)
@@ -102,11 +111,13 @@ class OrderController extends Controller
                 $orderItems[] = [
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    // NOTA: 'order_id' es añadido automáticamente por createMany
+                    'created_at' => now(), // Añadir timestamps para OrderItem
+                    'updated_at' => now(),
                 ];
             }
 
             // Usar la relación para guardar múltiples ítems a la vez
+            // La relación ya sabe que debe asignar el order_id
             $order->items()->createMany($orderItems);
 
             DB::commit();
@@ -115,13 +126,10 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // --- CAMBIO CLAVE PARA DEBUGGING ---
-            // En lugar de un mensaje genérico, mostramos el error exacto para diagnosticarlo.
-            \Log::error("Error al guardar pedido: " . $e->getMessage());
 
-            // MUESTRA EL MENSAJE DE ERROR DIRECTAMENTE:
+            // Loguear y devolver el error exacto para el debugging
+            Log::error("Error al guardar pedido: " . $e->getMessage());
             return back()->with('error', 'ERROR DE LA BASE DE DATOS: ' . $e->getMessage())->withInput();
-            // --- FIN DEL CAMBIO CLAVE ---
         }
     }
 
@@ -135,8 +143,9 @@ class OrderController extends Controller
         $order->load(['user.branch', 'branch', 'items.product']);
 
         // Control de acceso: Solo el gerente de la sucursal, Admin o Producción pueden ver.
-        if (Auth::user()->role === 'manager' && Auth::user()->branch_id !== $order->branch_id) {
-            abort(403, 'Acceso denegado. Solo puedes ver pedidos de tu sucursal.');
+        $user = Auth::user();
+        if ($user->hasRole('manager') && $order->branch_id !== $user->branch_id) {
+             abort(403, 'Acceso denegado. Solo puedes ver pedidos de tu sucursal.');
         }
 
         return view('orders.show', compact('order'));
@@ -148,18 +157,23 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        // Restricción: Solo si el pedido está PENDIENTE
+        $user = Auth::user();
+
+        // 1. Restricción de Estado: Solo si el pedido está PENDIENTE
         if ($order->status !== 'Pendiente') {
             return redirect()->route('orders.show', $order)->with('error', 'Solo se pueden editar pedidos con estado PENDIENTE.');
         }
 
-        // Control de acceso: Solo el gerente que lo creó o un administrador
-        if (Auth::user()->role === 'manager' && Auth::user()->id !== $order->user_id) {
+        // 2. Control de acceso: Solo el gerente que lo creó o un administrador
+        // Nota: Asumo que tienes un hasRole('admin') en otro middleware o ruta.
+        if ($user->hasRole('manager') && $user->id !== $order->user_id) {
              abort(403, 'Acceso denegado. Solo puedes editar pedidos que registraste.');
         }
 
-        $products = Product::orderBy('name')->get();
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+
         // Preparamos los ítems actuales para la vista de Alpine.js/Blade
+        // NOTA: Es importante que las claves coincidan con la estructura de Alpine (product_id, quantity)
         $currentItems = $order->items->map(function ($item) {
             return [
                 'product_id' => $item->product_id,
@@ -178,11 +192,18 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
-        // Restricción: Solo si el pedido está PENDIENTE
+        // 1. Restricción de Estado: Solo si el pedido está PENDIENTE
         if ($order->status !== 'Pendiente') {
             return redirect()->route('orders.show', $order)->with('error', 'Solo se pueden modificar pedidos con estado PENDIENTE.');
         }
 
+        // 2. Control de acceso (solo si es el usuario creador/gerente)
+        $user = Auth::user();
+        if ($user->hasRole('manager') && $user->id !== $order->user_id) {
+             abort(403, 'Acceso denegado. No tienes permisos para modificar este pedido.');
+        }
+
+        // 3. Validación
         $validatedData = $request->validate([
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
@@ -196,20 +217,22 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Actualizar el encabezado
+            // 4. Actualizar el encabezado
             $order->update([
                 'notes' => $validatedData['notes'],
             ]);
 
-            // 2. Eliminar ítems antiguos
+            // 5. Eliminar ítems antiguos
             $order->items()->delete();
 
-            // 3. Crear los ítems nuevos
+            // 6. Crear los ítems nuevos
             $orderItems = [];
             foreach ($validatedData['items'] as $item) {
                 $orderItems[] = [
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
             }
             $order->items()->createMany($orderItems);
@@ -220,10 +243,9 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // --- CAMBIO CLAVE PARA DEBUGGING ---
-            \Log::error("Error al actualizar pedido: " . $e->getMessage());
+
+            Log::error("Error al actualizar pedido: " . $e->getMessage());
             return back()->with('error', 'ERROR DE LA BASE DE DATOS: ' . $e->getMessage())->withInput();
-            // --- FIN DEL CAMBIO CLAVE ---
         }
     }
 
@@ -232,7 +254,7 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, Order $order)
     {
-        // Control de roles: Solo admin y production pueden cambiar el estado.
+        // 1. Control de roles: Solo admin y production pueden cambiar el estado.
         if (!Auth::user()->hasRole(['admin', 'production'])) {
              abort(403, 'Acceso denegado. No tienes permisos para cambiar el estado.');
         }
@@ -244,11 +266,11 @@ class OrderController extends Controller
         $status = $validated['status'];
         $updateData = ['status' => $status];
 
-        // Si el estado es 'completed', registrar el tiempo de finalización
+        // 2. Si el estado es 'Confirmado', registrar el tiempo de finalización
         if ($status === 'Confirmado') {
             $updateData['completed_at'] = now();
         } elseif ($status !== 'Confirmado' && $order->completed_at !== null) {
-            // Si el estado vuelve a ser no-completado, limpia el timestamp
+            // Si el estado se revierte de completado, limpia el timestamp
             $updateData['completed_at'] = null;
         }
 
@@ -257,7 +279,7 @@ class OrderController extends Controller
 
             return back()->with('success', "El estado del pedido #{$order->id} se ha cambiado a {$status}.");
         } catch (\Exception $e) {
-            \Log::error("Error al actualizar estado del pedido: " . $e->getMessage());
+            Log::error("Error al actualizar estado del pedido: " . $e->getMessage());
             return back()->with('error', 'Error al actualizar el estado del pedido.');
         }
     }
@@ -269,13 +291,14 @@ class OrderController extends Controller
      */
     public function destroy(Order $order)
     {
-        // Restricción: Solo si el pedido está PENDIENTE
+        // 1. Restricción de Estado: Solo si el pedido está PENDIENTE
         if ($order->status !== 'Pendiente') {
             return back()->with('error', 'Solo se pueden eliminar pedidos con estado PENDIENTE.');
         }
 
-        // Control de acceso: Solo el gerente que lo creó o un administrador
-        if (Auth::user()->role === 'manager' && Auth::user()->id !== $order->user_id) {
+        // 2. Control de acceso: Solo el gerente que lo creó o un administrador
+        $user = Auth::user();
+        if ($user->hasRole('manager') && $user->id !== $order->user_id) {
              abort(403, 'Acceso denegado. Solo puedes eliminar pedidos que registraste.');
         }
 
@@ -284,7 +307,7 @@ class OrderController extends Controller
             $order->delete();
             return redirect()->route('orders.index')->with('success', 'Pedido eliminado correctamente.');
         } catch (\Exception $e) {
-            \Log::error("Error al eliminar pedido: " . $e->getMessage());
+            Log::error("Error al eliminar pedido: " . $e->getMessage());
             return back()->with('error', 'Hubo un error al intentar eliminar el pedido.');
         }
     }

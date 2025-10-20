@@ -43,11 +43,18 @@ Route::middleware('auth')->group(function () {
 
     // Rutas de Recurso para Órdenes
     Route::middleware(['auth', 'role:manager|admin|production'])->group(function () {
-        // Definimos solo los métodos que usaremos en el CRUD de Pedidos
+        // 1. Ruta específica para que Producción/Admin actualicen solo el estado
+        // Esta ruta utiliza PUT (actualización) y requiere el ID de la orden.
+        Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])
+            ->name('orders.updateStatus')
+            // La vista show.blade.php ya maneja el rol, pero aquí se asegura
+            ->middleware('role:admin|production');
+
+        // 2. Definimos solo los métodos base que usaremos en el CRUD de Pedidos
         Route::resource('orders', OrderController::class)->only([
             'index', 'create', 'store', 'show'
         ]);
-});
+    });
 
 });
 
