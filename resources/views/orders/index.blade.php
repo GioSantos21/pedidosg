@@ -20,7 +20,7 @@
                         No se encontraron pedidos en este momento.
                         @if (auth()->user()->role === 'manager')
                             <div class="mt-2">
-                                <a href="{{ route('orders.create') }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                <a href="{{ route('orders.createIndex') }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
                                     ¡Crea el primer pedido!
                                 </a>
                             </div>
@@ -31,7 +31,7 @@
                     <div class="overflow-x-auto">
                         @if (Auth::user()->hasRole('manager'))
                         <div class="flex justify-start mb-4">
-                            <a href="{{ route('orders.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                            <a href="{{ route('orders.createIndex') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200">
                                 + Crear Nuevo Pedido
                             </a>
                         </div>

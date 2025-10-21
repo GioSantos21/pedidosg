@@ -1,135 +1,149 @@
-<x-app-layout><x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Crear Nuevo Pedido a Producción') }}</h2></x-slot><div class="py-12">
-    <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+<x-app-layout>
+    {{-- La variable $header se define aquí usando x-slot --}}
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Crear Pedido Masivo: ') . $categoryName }}
+        </h2>
+    </x-slot>
 
-        <!-- BLOQUE CLAVE AÑADIDO: Muestra errores de sesión (como el error de BD del Controller) -->
-        @if (session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 shadow-md" role="alert">
-                <strong class="font-bold">Error en la Operación:</strong>
-                <span class="block sm:inline">{{ session('error') }}</span>
-            </div>
-        @endif
-        <!-- FIN DEL BLOQUE CLAVE -->
+    <div class="py-12" x-data="orderForm()">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
 
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-            <div class="p-6">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight mb-4">
+                    Crear Pedido: {{ $categoryName }}
+                </h2>
+                <p class="text-gray-600 mb-6">
+                    Selecciona las cantidades necesarias de los productos de esta línea.
+                </p>
 
-                <!-- Cabecera de Contexto -->
-                <div class="mb-6 pb-4 border-b border-gray-200">
-                    <p class="text-lg font-semibold text-gray-700">Sucursal Solicitante:</p>
-                    <!-- NOTE: Assuming $branchName is passed from the controller -->
-                    <p class="text-2xl font-bold text-indigo-700">{{ $branchName ?? 'N/A' }}</p>
-                    <p class="text-sm text-gray-500 mt-1">Gerente: {{ auth()->user()->name }}</p>
-                </div>
-
-                <!-- Alpine Data: Inicializa la lógica del formulario dinámico -->
-                <form method="POST" action="{{ route('orders.store') }}"
-                      x-data="{
-                            // Inicializa con un ítem vacío para empezar
-                            items: [{ product_id: '', quantity: 1 }],
-                            products: @js($products), // Pasa la lista de productos de Laravel a Alpine
-
-                            addItem() {
-                                this.items.push({ product_id: '', quantity: 1 });
-                            },
-                            removeItem(index) {
-                                // Solo permite eliminar si quedan al menos 2 ítems
-                                if (this.items.length > 1) {
-                                    this.items.splice(index, 1);
-                                }
-                            }
-                        }">
+                <!-- Formulario de Pedido Masivo -->
+                <form method="POST" action="{{ route('orders.store') }}">
                     @csrf
 
-                    <!-- Errores de Validación Global -->
+                    <!-- Campo oculto para la línea de producción -->
+                    <input type="hidden" name="line_number" value="{{ $lineNumber }}">
+
+                    <!-- 1. Buscador de Productos -->
+                    <div class="mb-4">
+                        <label for="search" class="block text-sm font-medium text-gray-700">Buscar Producto (Código / Nombre)</label>
+                        <input type="text"
+                                id="search"
+                                x-model="searchText"
+                                @input="filterProducts"
+                                placeholder="Escribe el código o nombre para filtrar..."
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    </div>
+
+                    <!-- Mensajes de Error Generales -->
                     @if ($errors->any())
                         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                            <strong class="font-bold">¡Error!</strong>
+                            <span class="block sm:inline">Por favor, revisa los campos marcados.</span>
                             <ul>
                                 @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
+                                    <li>- {{ $error }}</li>
                                 @endforeach
                             </ul>
                         </div>
                     @endif
 
-                    <!-- ITEMS DEL PEDIDO -->
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Productos a Solicitar</h3>
+                    <!-- 2. Tabla de Productos y Cantidades -->
+                    <div class="overflow-x-auto shadow-md sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Producto</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Existencias Actuales</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Cantidad a Solicitar</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- Alpine.js se encarga de mostrar la lista filtrada -->
+                                <template x-for="(product, index) in filteredProducts" :key="product.code">
+                                    <tr>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900" x-text="product.code"></td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800" x-text="product.name"></td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500" x-text="product.stock"></td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm">
+                                            <!-- Campo de Cantidad con el nombre del array -->
+                                            <input type="number"
+                                                    :name="'quantities[' + product.code + '][quantity]'"
+                                                    min="0"
+                                                    placeholder="0"
+                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-center"
+                                                    :class="{'border-red-500': hasErrorForProduct(product.code)}">
 
-                        <!-- Bucle de Items Dinámicos -->
-                        <template x-for="(item, index) in items" :key="index">
-                            <div class="flex items-start space-x-4 border border-gray-200 p-4 rounded-lg bg-gray-50">
+                                            <!-- Campo oculto para asegurar que el código de producto se envíe incluso si la cantidad es 0 -->
+                                            <input type="hidden"
+                                                    :name="'quantities[' + product.code + '][product_code]'"
+                                                    :value="product.code">
+                                        </td>
+                                    </tr>
+                                </template>
 
-                                <!-- Selector de Producto -->
-                                <div class="flex-1">
-                                    <!-- CORRECCIÓN CLAVE: Usamos x-bind:for y comillas simples para evitar la evaluación de Blade -->
-                                    <x-input-label x-bind:for="'product_' + index" :value="__('Producto')" />
-                                    <select x-bind:name="'items[' + index + '][product_id]'"
-                                            x-bind:id="'product_' + index"
-                                            x-model="item.product_id"
-                                            required
-                                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full mt-1">
-                                        <option value="">Selecciona un Producto</option>
-                                        <template x-for="product in products" :key="product.id">
-                                            <option :value="product.id" x-text="product.name + ' (' + product.unit + ')'"></option>
-                                        </template>
-                                    </select>
-                                </div>
+                                    <!-- Fila cuando no hay resultados de búsqueda -->
+                                <template x-if="filteredProducts.length === 0">
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-4 text-center text-gray-500">
+                                            No se encontraron productos que coincidan con la búsqueda.
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                <!-- Cantidad -->
-                                <div class="w-28">
-                                    <!-- CORRECCIÓN CLAVE: Usamos x-bind:for y comillas simples para evitar la evaluación de Blade -->
-                                    <x-input-label x-bind:for="'quantity_' + index" :value="__('Cantidad')" />
-                                    <x-text-input x-bind:id="'quantity_' + index"
-                                                  x-bind:name="'items[' + index + '][quantity]'"
-                                                  type="number"
-                                                  min="1"
-                                                  x-model="item.quantity"
-                                                  required
-                                                  class="block w-full mt-1 text-center" />
-                                </div>
-
-                                <!-- Botón de Eliminar Item -->
-                                <div class="pt-7">
-                                    <button type="button"
-                                            @click="removeItem(index)"
-                                            class="text-red-500 hover:text-red-700 p-2 rounded-full transition duration-150"
-                                            x-show="items.length > 1"
-                                            title="Eliminar ítem">
-                                        <!-- Icono de Bote de Basura -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.86 11.66A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-2.34L5 7m4 0V5a2 2 0 012-2h2a2 2 0 012 2v2M8 7h8"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-
-                        <!-- Botón para Añadir Ítem -->
-                        <button type="button" @click="addItem()" class="mt-4 flex items-center text-indigo-600 hover:text-indigo-900 font-semibold transition duration-150">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
-                            Añadir Producto
+                    <div class="mt-6">
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150">
+                            Crear Pedido Masivo
                         </button>
-                    </div>
-
-                    <!-- Notas Adicionales -->
-                    <div class="mt-8">
-                        <x-input-label for="notes" :value="__('Notas Adicionales para Producción (Opcional)')" />
-                        <textarea id="notes" name="notes" rows="3" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('notes') }}</textarea>
-                        <x-input-error :messages="$errors->get('notes')" class="mt-2" />
-                    </div>
-
-                    <!-- Botón de Envío -->
-                    <div class="flex items-center justify-end mt-6">
-                        <x-primary-button>
-                            {{ __('Enviar Pedido') }}
-                        </x-primary-button>
+                        <a href="{{ route('orders.createIndex') }}" class="ml-4 text-sm text-gray-600 hover:text-gray-900">
+                            Cancelar y Volver a Categorías
+                        </a>
                     </div>
                 </form>
 
             </div>
         </div>
     </div>
-</div>
+
+    <script>
+        function orderForm() {
+            return {
+                products: @json($products),
+                filteredProducts: @json($products),
+                searchText: '',
+
+                // Función para filtrar la tabla
+                filterProducts() {
+                    const search = this.searchText.toLowerCase();
+                    if (search === '') {
+                        this.filteredProducts = this.products;
+                    } else {
+                        this.filteredProducts = this.products.filter(product => {
+                            return product.code.toLowerCase().includes(search) ||
+                                    product.name.toLowerCase().includes(search);
+                        });
+                    }
+                },
+
+                // Función para marcar errores (opcional, si hay errores en la sesión)
+                hasErrorForProduct(productCode) {
+                    // Nota: Esta parte solo verifica si hay un error general en 'quantities'.
+                    // Para una validación más precisa por producto, necesitarías pasar el objeto $errors
+                    // de forma más explícita a Alpine.
+                    @error('quantities')
+                        const errors = {!! json_encode($errors->get('quantities')) !!};
+                        if (errors.length > 0 && errors[0].includes(productCode)) {
+                            return true;
+                        }
+                    @enderror
+                    return false;
+                }
+            }
+        }
+    </script>
 </x-app-layout>
