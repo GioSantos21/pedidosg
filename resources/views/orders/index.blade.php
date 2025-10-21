@@ -27,7 +27,15 @@
                         @endif
                     </div>
                 @else
+
                     <div class="overflow-x-auto">
+                        @if (Auth::user()->hasRole('manager'))
+                        <div class="flex justify-start mb-4">
+                            <a href="{{ route('orders.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                                + Crear Nuevo Pedido
+                            </a>
+                        </div>
+                    @endif
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
