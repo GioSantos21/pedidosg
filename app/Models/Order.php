@@ -16,10 +16,9 @@ class Order extends Model
     protected $fillable = [
         'branch_id',
         'user_id',
+        'category_id',
         'notes',
         'status',
-        'completed_at', // Para registrar cuándo se finaliza
-        // Si tienes requested_at en tu migración:
         'requested_at',
     ];
 
@@ -39,6 +38,11 @@ class Order extends Model
     {
         // Asumiendo que branch_id apunta a la tabla 'branches'
         return $this->belongsTo(Branch::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 
     /**

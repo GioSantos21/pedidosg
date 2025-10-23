@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Product;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -18,6 +19,7 @@ class DatabaseSeeder extends Seeder
     $this->call([
         BranchSeeder::class,
         CategorySeeder::class,
+        ProductSeeder::class,
     ]);
 
     // Crear un Administrador (role=admin)

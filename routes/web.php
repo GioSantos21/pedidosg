@@ -31,6 +31,8 @@ Route::middleware('auth')->group(function () {
     // 2. Formulario de Creación: Muestra la tabla de productos filtrada por línea
     Route::get('orders/create/{lineNumber}', [OrderController::class, 'create'])->name('orders.create');
 
+    Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
+
     // ----------------------------------------------------------------------
 
 

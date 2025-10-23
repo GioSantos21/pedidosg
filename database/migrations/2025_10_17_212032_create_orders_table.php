@@ -15,6 +15,7 @@ return new class extends Migration
         $table->id();
         $table->foreignId('branch_id')->constrained(); // Sucursal que pide
         $table->foreignId('user_id')->constrained(); // Gerente que registra
+        $table->foreignId('category_id')->constrained();
         $table->enum('status', ['Pendiente', 'Confirmado', 'Anulado'])->default('Pendiente');
         $table->text('notes')->nullable();
         $table->timestamp('requested_at')->useCurrent();

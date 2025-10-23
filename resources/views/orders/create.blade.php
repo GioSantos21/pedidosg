@@ -22,7 +22,7 @@
                     @csrf
 
                     <!-- Campo oculto para la línea de producción -->
-                    <input type="hidden" name="line_number" value="{{ $lineNumber }}">
+                    <input type="hidden" name="line_number" value="{{ $categoryId }}">
 
                     <!-- 1. Buscador de Productos -->
                     <div class="mb-4">

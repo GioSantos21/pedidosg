@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->string('product_code')->nullable();
             $table->foreignId('category_id')->constrained()->onDelete('cascade'); // Relación con Categorías
             $table->string('name')->unique();
             $table->string('unit')->nullable()->comment('Ej. Unidad, Kg, Paquete'); // Unidad de medida para el pedido
             $table->decimal('cost', 8, 2)->nullable(); // Costo de producción (opcional, para reportes internos)
             $table->boolean('is_active')->default(true); // Para activar/desactivar un producto del catálogo
+            $table->decimal('stock',8,2)->default(0);
             $table->timestamps();
         });
     }
