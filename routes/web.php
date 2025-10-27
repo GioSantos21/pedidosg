@@ -15,29 +15,37 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
 
-// RUTAS DE PERFIL
+// RUTAS PROTEGIDAS (Requieren autenticación)
 Route::middleware('auth')->group(function () {
+
+    // RUTAS DE PERFIL
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ----------------------------------------------------------------------
-    // --- FLUJO DE CREACIÓN DE PEDIDOS (MÁXIMA PRIORIDAD PARA DIAGNÓSTICO) ---
+    // --- FLUJO DE CREACIÓN DE PEDIDOS UNIFICADOS (MODIFICADO) ---
     // ----------------------------------------------------------------------
 
-    // 1. Índice de Creación: Muestra los 3 botones de categoría
+    // 1. Índice de Creación: Muestra las categorías para iniciar el pedido
     Route::get('orders/create-index', [OrderController::class, 'createIndex'])->name('orders.createIndex');
 
     // 2. Formulario de Creación: Muestra la tabla de productos filtrada por línea
-    Route::get('orders/create/{lineNumber}', [OrderController::class, 'create'])->name('orders.create');
+    Route::get('orders/create/{categoryId}', [OrderController::class, 'create'])->name('orders.create');
 
-    Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
+    // 🚨 NUEVA RUTA: Guarda los productos seleccionados de UNA CATEGORÍA en la SESIÓN (la cesta)
+    Route::post('/orders/add-item', [OrderController::class, 'addItem'])->name('orders.addItem');
+
+    // 🚨 RUTA FINAL: Procesa el pedido UNIFICADO a partir de todos los ítems guardados en la sesión
+    // Nota: El POST a '/orders' es ahora la finalización de la cesta.
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
 
     // ----------------------------------------------------------------------
 
 
     // RUTAS DE PEDIDOS RESTANTES (CRUD)
-    Route::resource('orders', OrderController::class)->only(['index', 'store', 'show', 'destroy']);
+    // Usamos 'only' para que no cree rutas duplicadas para 'store', ya que la definimos arriba.
+    Route::resource('orders', OrderController::class)->only(['index', 'show', 'destroy']);
 
     // 3. Lógica de Actualización de Estado (Solo Admin/Production)
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])

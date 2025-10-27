@@ -14,7 +14,7 @@ class BranchSeeder extends Seeder
     public function run(): void
     {
         Branch::create(['name' => 'Casa Matriz - Producción', 'address' => 'Centro Principal']);
-        Branch::create(['name' => 'Sucursal Zona Norte', 'address' => 'Av. Norte 123']);
-        Branch::create(['name' => 'Sucursal El Centro', 'address' => 'Calle Principal 45']);
+        Branch::create(['name' => 'Terminal', 'address' => 'Av. Norte 123']);
+        Branch::create(['name' => 'El Centro', 'address' => 'Calle Principal 45']);
     }
 }

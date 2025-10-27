@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
 
     // Crear un Administrador (role=admin)
     User::create([
-        'name' => 'Anthony Admin',
+        'name' => 'Anthonys Admin',
         'email' => 'admin@anthonys.com',
         'password' => Hash::make('password'), // Contraseña: password
         'role' => 'admin',
@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
     ]);
     // Crear un Gerente de Sucursal (role=manager)
     User::create([
-        'name' => 'Gerente Norte',
+        'name' => 'Gerente Centro',
         'email' => 'gerente@anthonys.com',
         'password' => Hash::make('password'),
         'role' => 'manager',

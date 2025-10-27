@@ -1,135 +1,277 @@
-<x-app-layout><x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Editar Pedido #') . $order->id . ' | Sucursal: ' . $branchName }}</h2></x-slot><div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Editar Pedido') }} #{{ $order->id }}
+        </h2>
+    </x-slot>
 
-        {{-- Mensajes de Sesión --}}
-        @if (session('success'))
-            <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
-                <span class="font-medium">Éxito:</span> {{ session('success') }}
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                <span class="font-medium">Error:</span> {{ session('error') }}
-            </div>
-        @endif
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Mensajes de Sesión -->
+            @if (session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ session('success') }}</span>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
 
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 lg:p-8">
+            <div x-data="{
+                items: @js($orderItems),
+                allProducts: @js($products),
+                categories: @js($categories),
+                notes: '{{ $order->notes }}',
 
-            {{-- El formulario de edición utiliza el método PUT para actualizar --}}
-            <form method="POST" action="{{ route('orders.update', $order) }}" x-data="orderForm({{ $currentItems }})">
-                @csrf
-                @method('PUT')
+                // Nuevos estados para el filtrado
+                selectedCategory: '',
+                searchTerm: '',
+                selectedProductId: '',
 
-                <div class="space-y-6">
-                    {{-- NOTAS DEL PEDIDO --}}
+                    // COMPUTED PROPERTY para filtrar productos
+                    filteredProducts() {
+                        // Limpia el término de búsqueda una sola vez
+                        const searchLower = this.searchTerm.toLowerCase().trim();
+
+                        const filtered = this.allProducts
+                            .filter(product => {
+                                // 1. Filtrar por categoría
+                                const categoryMatch = this.selectedCategory === '' || product.category_id == this.selectedCategory;
+
+                                // 2. Filtrar por término de búsqueda (código o nombre) - APLICACIÓN DE .trim()
+                                const productCodeLower = product.product_code ? product.product_code.toLowerCase().trim() : '';
+                                const productNameLower = product.name ? product.name.toLowerCase().trim() : '';
+
+                                const searchMatch = searchLower === '' ||
+                                    productCodeLower.includes(searchLower) ||
+                                    productNameLower.includes(searchLower);
+
+                                // 3. Ocultar productos que ya están en el pedido
+                                const itemExists = this.items.some(item => item.product_id == product.id);
+
+                                return categoryMatch && searchMatch && !itemExists;
+                            })
+                            .slice(0, 100);
+
+                        // Lógica de Autoselección (Solución al Problema 1)
+                        if (searchLower !== '' && filtered.length === 1) {
+                            // Si solo hay un resultado, lo autoselecciona
+                            this.selectedProductId = filtered[0].id;
+                        } else if (searchLower === '' || filtered.length === 0) {
+                            // Si la búsqueda se vacía o no hay resultados, deseleccionar
+                            this.selectedProductId = '';
+                        } else if (filtered.length > 1) {
+                            // Si hay más de uno, asegurarse de que no haya una autoselección incorrecta
+                            if (!filtered.some(p => p.id == this.selectedProductId)) {
+                                this.selectedProductId = '';
+                            }
+                        }
+
+                        return filtered;
+                    },
+
+
+
+                addItem(id) {
+                    const product = this.allProducts.find(p => p.id == id);
+                    if (!product || this.items.some(item => item.product_id == id)) return;
+
+                    this.items.push({
+                        product_id: product.id,
+                        name: product.name,
+                        unit: product.unit,
+                        quantity: 1
+                    });
+
+                    // Limpiar y resetear la búsqueda después de añadir
+                    this.selectedProductId = '';
+                    this.searchTerm = '';
+                    this.selectedCategory = '';// Limpiar la selección y la búsqueda
+                },
+
+                removeItem(index) {
+                    this.items.splice(index, 1);
+                },
+
+                validateQuantities() {
+                    return this.items.length > 0 && this.items.every(item => item.quantity > 0);
+                }
+            }" class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+
+                <!-- INFORMACIÓN DE LA ORDEN -->
+                <div class="mb-6 border-b pb-4">
+                    <p class="text-sm text-gray-500">
+                        Sucursal: {{ $order->branch->name }} | Solicitante: {{ $order->user->name }} | Fecha: {{ $order->created_at->format('d/m/Y H:i') }}
+                    </p>
+                    <p class="text-lg font-bold mt-2">Estado Actual:
+                        <span class="px-2 py-1 rounded-full text-sm font-semibold
+                            @if($order->status == 'Pendiente') bg-yellow-100 text-yellow-800
+                            @elseif($order->status == 'Confirmado') bg-blue-100 text-blue-800
+                            @else bg-red-100 text-red-800 @endif">
+                            {{ $order->status }}
+                        </span>
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ route('orders.update', $order) }}" class="space-y-6">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Mensajes de Error de Validación de Laravel -->
+                    @if ($errors->any())
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                            <p class="font-bold">¡Error de Validación!</p>
+                            <ul class="mt-1 list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <!-- NOTAS ADICIONALES (Etiqueta HTML estándar) -->
                     <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales (Opcional):</label>
-                        <textarea name="notes" id="notes" rows="3" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full" maxlength="500">{{ old('notes', $order->notes) }}</textarea>
+                        <label for="notes" class="block font-medium text-sm text-gray-700">
+                            {{ __('Notas Adicionales para el Pedido') }}
+                        </label>
+                        <textarea id="notes" name="notes" x-model="notes" rows="3" class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">{{ old('notes', $order->notes) }}</textarea>
                         @error('notes')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- SECCIÓN DE ITEMS --}}
-                    <h3 class="text-xl font-semibold text-gray-700 border-t pt-4">Productos Solicitados</h3>
+                    <h3 class="text-xl font-semibold border-b pb-2">Productos del Pedido</h3>
 
-                    <div id="item-list" class="space-y-4">
-                        {{-- Contenedor de Items (Manejado por Alpine.js) --}}
-                        <template x-for="(item, index) in items" :key="index">
-                            <div class="flex flex-col sm:flex-row gap-3 p-4 bg-gray-50 border rounded-lg items-end">
-                                {{-- Selector de Producto --}}
-                                <div class="flex-1 w-full">
-                                    <label :for="'product_id_' + index" class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
-                                    <select :name="'items[' + index + '][product_id]'"
-                                            :id="'product_id_' + index"
-                                            x-model.number="item.product_id"
-                                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full" required>
-                                        <option value="">Seleccione un producto</option>
-                                        {{-- Recorremos la lista de productos estáticamente para que Alpine.js pueda usarla --}}
-                                        @foreach ($products as $product)
-                                            <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->unit }})</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                    <!-- INTERFAZ DE FILTRADO Y AÑADIDO (CORREGIDA) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 border rounded-lg bg-gray-50">
 
-                                {{-- Cantidad --}}
-                                <div class="w-full sm:w-32">
-                                    <label :for="'quantity_' + index" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                                    <input type="number"
-                                           :name="'items[' + index + '][quantity]'"
-                                           :id="'quantity_' + index"
-                                           x-model.number="item.quantity"
-                                           min="1"
-                                           class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full" required />
-                                </div>
-
-                                {{-- Botón de Eliminar Item --}}
-                                <button type="button" @click="removeItem(index)"
-                                        class="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 w-full sm:w-auto flex justify-center items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 6h6v10H7V6z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </template>
-
-                        {{-- Botón para Añadir Item --}}
-                        <div class="flex justify-start pt-2">
-                            <button type="button" @click="addItem"
-                                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                                </svg>
-                                Añadir Producto
-                            </button>
+                        <!-- Columna 1: Selección de Categoría -->
+                        <div>
+                            <label for="category_select" class="block font-medium text-sm text-gray-700">
+                                {{ __('Línea / Categoría') }}
+                            </label>
+                            <select x-model="selectedCategory" @change="searchTerm = ''; selectedProductId = ''" id="category_select" class="w-full h-10 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
+                                <option value="">-- Todas las Categorías --</option>
+                                <template x-for="category in categories" :key="category.id">
+                                    <option :value="category.id" x-text="category.name"></option>
+                                </template>
+                            </select>
                         </div>
 
-                        {{-- Mensaje general de error para la validación de items --}}
-                        @error('items')
-                            <p class="text-sm text-red-600 mt-1">Error en los productos solicitados: {{ $message }}</p>
-                        @enderror
-                        {{-- Muestra errores de ítems específicos si los hay, como un listado. Esto es un fallback. --}}
-                        @foreach ($errors->get('items.*') as $messages)
-                            @foreach ($messages as $message)
-                                <p class="text-sm text-red-600 mt-1">- {{ $message }}</p>
-                            @endforeach
-                        @endforeach
+                        <!-- Columna 2: Búsqueda (Se añadió @keydown.enter.prevent para evitar envío del formulario) -->
+                        <div>
+                            <label for="search_term" class="block font-medium text-sm text-gray-700">
+                                {{ __('Buscar Producto (Código / Nombre)') }}
+                            </label>
+                            <input type="text"
+                                   x-model.debounce.300ms="searchTerm"
+                                   @keydown.enter.prevent="selectedProductId && addItem(selectedProductId)"
+                                   id="search_term"
+                                   placeholder="Escribe para filtrar..."
+                                   class="w-full h-10 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
+                        </div>
+
+                        <!-- Columna 3: Producto Filtrado y Botón Añadir -->
+                        <div>
+                            <label for="product_select" class="block font-medium text-sm text-gray-700">
+                                {{ __('Selecciona el Producto') }}
+                            </label>
+                            <div class="flex space-x-2">
+                                <select x-model="selectedProductId" id="product_select" class="w-full flex-grow h-10 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
+                                    <option value="">-- Selecciona un producto --</option>
+                                    <template x-for="product in filteredProducts()" :key="product.id">
+                                        <option :value="product.id" x-text="product.product_code + ' - ' + product.name + ' (' + product.unit + ')'"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="addItem(selectedProductId)" :disabled="!selectedProductId" class="inline-flex items-center flex-shrink-0 h-10 px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-900 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-50 transition ease-in-out duration-150 shadow-md">
+                                    {{ __('Añadir') }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                </div>
 
-                {{-- Botón de Guardar y Regreso --}}
-                <div class="flex justify-between items-center mt-8 pt-6 border-t">
-                    <a href="{{ route('orders.show', $order) }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Cancelar y Volver</a>
+                    <!-- TABLA DE PRODUCTOS ACTUALES -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 shadow-md sm:rounded-lg">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CÓDIGO</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UNIDAD</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CANTIDAD</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ACCIÓN</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="(item, index) in items" :key="item.product_id">
+                                    <tr>
+                                        <!-- Campo Oculto para Product ID -->
+                                        <input type="hidden" :name="'orderItems[' + index + '][product_id]'" :value="item.product_id">
 
-                    <x-primary-button class="ml-4 bg-indigo-600 hover:bg-indigo-700">
-                        Actualizar Pedido
-                    </x-primary-button>
-                </div>
-            </form>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.unit"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <!-- Campo de Cantidad -->
+                                            <input type="number"
+                                                   :name="'orderItems[' + index + '][quantity]'"
+                                                   x-model.number="item.quantity"
+                                                   min="1"
+                                                   class="w-20 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm p-2 text-sm">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <!-- Botón de Eliminar Corregido -->
+                                            <button type="button" @click="removeItem(index)" class="text-red-600 hover:text-red-900 font-bold">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <!-- Mensaje si la tabla está vacía -->
+                                <template x-if="items.length === 0">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                            No hay productos en el pedido.
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
 
+                    <!-- BOTONES DE ACCIÓN PRINCIPALES (Botones HTML estándar) -->
+                    <div class="flex justify-between items-center pt-4">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-50 transition ease-in-out duration-150 shadow-lg" :disabled="!validateQuantities()">
+                            {{ __('Guardar Cambios del Pedido') }}
+                        </button>
+
+                        <a href="{{ route('orders.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            {{ __('Cancelar y Volver al Listado') }}
+                        </a>
+                    </div>
+                </form>
+
+                <!-- FORMULARIO DE ANULACIÓN (Separado del formulario de edición principal) -->
+                @if($order->status !== 'Anulado' && $order->status !== 'Confirmado')
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h4 class="text-lg font-semibold text-red-700 mb-3">{{ __('Anular Pedido') }}</h4>
+                        <p class="text-sm text-gray-600 mb-4">{{ __('Si ya no se requiere este pedido, puede anularlo permanentemente.') }}</p>
+                        <form method="POST" action="{{ route('orders.updateStatus', $order) }}" onsubmit="return confirm('¿Estás seguro de que deseas anular este pedido? Esta acción no se puede deshacer.');">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="Anulado">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-50 transition ease-in-out duration-150 shadow-lg">
+                                {{ __('Anular Pedido') }}
+                            </button>
+                        </form>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-</div>
-</x-app-layout>{{-- Script de Alpine.js para gestionar los items --}}<script>function orderForm(initialItems) {// Mapea los items existentes para asegurar que el formato sea el esperado por Alpine.const mappedItems = initialItems.map(item => ({product_id: item.product_id,quantity: item.quantity,}));    return {
-        // Inicializa los items con los datos del pedido existente
-        items: mappedItems.length &gt; 0 ? mappedItems : [{ product_id: &#39;&#39;, quantity: 1 }],
-
-        addItem() {
-            this.items.push({
-                product_id: &#39;&#39;,
-                quantity: 1
-            });
-        },
-
-        removeItem(index) {
-            if (this.items.length &gt; 1) {
-                this.items.splice(index, 1);
-            } else {
-                // Usar un modal o mensaje en lugar de alert() si tienes un componente de mensaje
-                console.error(&#39;Debe haber al menos un producto en el pedido.&#39;);
-            }
-        }
-    }
-}
-</script>
+</x-app-layout>

@@ -105,7 +105,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($order->items as $item)
+                            @foreach ($order->orderItems as $item)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item->product->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $item->product->unit }}</td>
@@ -116,7 +116,7 @@
                         <tfoot>
                             <tr>
                                 <td colspan="2" class="px-6 py-3 text-right text-base font-bold text-gray-700">Total Items:</td>
-                                <td class="px-6 py-3 text-right text-base font-bold text-indigo-600">{{ $order->items->sum('quantity') }}</td>
+                                <td class="px-6 py-3 text-right text-base font-bold text-indigo-600">{{ $order->orderItems->sum('quantity') }}</td>
                             </tr>
                         </tfoot>
                     </table>
