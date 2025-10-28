@@ -149,7 +149,7 @@ class OrderController extends Controller
         $totalItems = collect($newCart)->sum('quantity');
 
         return redirect()->route('orders.createIndex')
-            ->with('success', "¡Productos de la línea de producción guardados! Tienes {$totalItems} ítems en tu pedido.");
+            ->with('success', "");
     }
 
     /**
