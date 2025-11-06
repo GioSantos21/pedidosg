@@ -17,6 +17,11 @@
                         </div>
                     @endif
 
+                        <a href="{{ route('admin.users.create') }}" class="bg-[#874ab3] hover:bg-[#623579]
+                        text-white font-bold py-2 px-4 rounded mb-4 inline-block">
+                            + Nuevo Usuario
+                        </a>
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">

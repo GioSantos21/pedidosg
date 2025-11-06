@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
 class UserController extends Controller
 {
@@ -57,7 +59,46 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado exitosamente.');
     }
 
-    // NOTA: No usamos create, store, show, o destroy por ahora.
+    /**
+     * Muestra el formulario para crear un nuevo usuario.
+     */
+    public function create()
+    {
+        $branches = Branch::all(); // Necesitamos las sucursales para el dropdown
+        return view('admin.users.create', compact('branches'));
+    }
+
+    /**
+     * Almacena un nuevo usuario en la base de datos.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', Rule::in(['admin', 'production', 'manager'])],
+            'branch_id' => [
+                Rule::requiredIf($request->role === 'manager'),
+                'nullable',
+                'exists:branches,id'
+            ],
+        ]);
+
+        // Prepara los datos para la creación
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']), // Hashear la contraseña
+            'role' => $validated['role'],
+            'branch_id' => $validated['role'] === 'manager' ? $validated['branch_id'] : null,
+        ];
+
+        User::create($data);
+
+        return redirect()->route('admin.users.index')->with('success', 'Usuario creado exitosamente.');
+    }
+
     // El registro (create/store) lo maneja Breeze.
     // El borrado (destroy) es delicado y lo omitiremos.
 }
