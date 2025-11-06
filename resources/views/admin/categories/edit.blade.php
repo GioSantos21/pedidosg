@@ -27,6 +27,13 @@
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
 
+                        <div class="mt-4">
+                            <label for="is_active" class="inline-flex items-center">
+                                <input id="is_active" type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_active', $category->is_active))>
+                                <span class="ml-2 text-sm text-gray-600">{{ __('Categoría Activa') }}</span>
+                            </label>
+                        </div>
+
                         <div class="flex items-center justify-end mt-4">
                             <x-primary-button>
                                 {{ __('Actualizar Categoría') }}

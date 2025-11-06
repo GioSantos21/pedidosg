@@ -21,14 +21,25 @@ class CategoryController extends Controller
     }
 
     // Almacena una nueva categoría
+   // Almacena una nueva categoría
     public function store(Request $request)
     {
-        $request->validate([
+        // 1. Validamos los campos que ya tenías
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string',
         ]);
 
-        Category::create($request->all());
+        // 2. AÑADIMOS LA LÓGICA DEL CHECKBOX
+        // $request->has('is_active') devuelve 'true' si el checkbox estaba marcado,
+        // y 'false' si no lo estaba.
+        // Guardamos este valor (true/false) en nuestro array de datos validados.
+        $validatedData['is_active'] = $request->has('is_active');
+
+        // 3. Creamos la categoría usando el array $validatedData
+        // (que ahora SÍ tiene el valor de 'is_active').
+        // Ya no usamos $request->all().
+        Category::create($validatedData);
 
         return redirect()->route('admin.categories.index')->with('success', 'Categoría creada exitosamente.');
     }
@@ -42,27 +53,31 @@ class CategoryController extends Controller
     // Actualiza la categoría en la base de datos
     public function update(Request $request, Category $category)
     {
-        $request->validate([
-            // La validación unique debe ignorar la categoría actual
+        // 1. Validamos como ya hacías
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
             'description' => 'nullable|string',
         ]);
 
-        $category->update($request->all());
+        // 2. AÑADIMOS LA LÓGICA DEL CHECKBOX (igual que en store)
+        $validatedData['is_active'] = $request->has('is_active');
+
+        // 3. Actualizamos la categoría con los datos completos
+        $category->update($validatedData);
 
         return redirect()->route('admin.categories.index')->with('success', 'Categoría actualizada exitosamente.');
     }
 
-    // Elimina una categoría
-    public function destroy(Category $category)
+    // Cambiar el status a una categoría
+    /**
+     * Cambia el estado (activo/inactivo) de una categoría.
+     */
+    public function toggleStatus(Category $category)
     {
-        // NOTA: Si una categoría tiene productos, la restricción de clave foránea
-        // podría causar un error. Considera eliminar primero los productos o reasignarlos.
-        try {
-            $category->delete();
-            return redirect()->route('admin.categories.index')->with('success', 'Categoría eliminada exitosamente.');
-        } catch (\Illuminate\Database\QueryException $e) {
-            return redirect()->route('admin.categories.index')->with('error', 'No se puede eliminar la categoría porque tiene productos asociados.');
-        }
+        $category->is_active = !$category->is_active;
+        $category->save();
+
+        $status = $category->is_active ? 'activa' : 'inactiva';
+        return redirect()->route('admin.categories.index')->with('success', "La categoría '{$category->name}' ha sido marcada como {$status}.");
     }
 }

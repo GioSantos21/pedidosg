@@ -66,10 +66,13 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Producto actualizado exitosamente.');
     }
 
-    // Elimina un producto
-    public function destroy(Product $product)
+    // Cambiar status de un producto
+    public function toggleStatus(Product $product)
     {
-        $product->delete(); // Gracias a las claves foráneas, esto no debería causar problemas
-        return redirect()->route('admin.products.index')->with('success', 'Producto eliminado exitosamente.');
+        $product->is_active = !$product->is_active;
+        $product->save();
+
+        $status = $product->is_active ? 'activo' : 'inactivo';
+        return redirect()->route('admin.products.index')->with('success', "El producto '{$product->name}' ha sido marcadoc como {$status}.");
     }
 }

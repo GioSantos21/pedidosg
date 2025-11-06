@@ -25,6 +25,7 @@
                                     <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
                                     <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
                                     <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                     <th class="px-6 py-3 bg-gray-50">Acciones</th>
                                 </tr>
                             </thead>
@@ -36,17 +37,26 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $product->category->name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $product->unit }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $product->cost }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm ">
+                                            @if ($product->is_active)
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                            @else
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                            @endif
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('admin.products.edit', $product) }}" class="text-indigo-600
                                              hover:text-indigo-900 mr-3">Editar</a>
                                              {{-- FALTABA ESTO: FORMULARIO DE ELIMINAR --}}
-                                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline-block"
-                                                onsubmit="return confirm('¿Estás seguro de que quieres eliminar el producto: {{ $product->name }}?')">
+                                            <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST" class="inline-block"
+                                                onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de este producto?')">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900 ml-3">
-                                                    Eliminar
-                                                </button>
+                                                @method('PATCH')
+                                                @if ($product->is_active)
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 ml-3">Desactivar</button>
+                                                @else
+                                                    <button type="submit" class="text-green-600 hover:text-green-900 ml-3">Activar</button>
+                                                @endif
                                             </form>
                                             {{-- Aquí iría el formulario de Eliminación --}}
                                         </td>

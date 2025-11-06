@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 

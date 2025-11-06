@@ -14,4 +14,8 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

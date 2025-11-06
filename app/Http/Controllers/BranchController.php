@@ -30,13 +30,14 @@ class BranchController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:branches,name',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
         ]);
 
-        Branch::create($request->all());
+        $validatedData['is_active'] = $request->has('is_active');
+        Branch::create($validatedData);
 
         return redirect()->route('admin.branches.index')->with('success', 'Sucursal creada exitosamente.');
     }
@@ -54,13 +55,14 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:branches,name,' . $branch->id,
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
         ]);
 
-        $branch->update($request->all());
+        $validatedData['is_active'] = $request->has('is_active');
+        $branch->update($validatedData);
 
         return redirect()->route('admin.branches.index')->with('success', 'Sucursal actualizada exitosamente.');
     }
@@ -68,17 +70,17 @@ class BranchController extends Controller
     /**
      * Elimina la sucursal.
      */
-    public function destroy(Branch $branch)
+    public function toggleStatus(Branch $branch)
     {
-        if ($branch->users()->count() > 0 || $branch->orders()->count() > 0) {
-            return redirect()->route('admin.branches.index')->with('error', 'No se puede eliminar la sucursal porque tiene usuarios o pedidos asociados.');
+        // Seguridad: No desactivar si tiene usuarios activos asignados
+        if ($branch->is_active && $branch->users()->count() > 0) {
+             return redirect()->route('admin.branches.index')->with('error', 'No se puede desactivar la sucursal porque tiene usuarios asignados.');
         }
 
-        try {
-            $branch->delete();
-            return redirect()->route('admin.branches.index')->with('success', 'Sucursal eliminada exitosamente.');
-        } catch (\Exception $e) {
-            return redirect()->route('admin.branches.index')->with('error', 'Ocurrió un error al eliminar la sucursal.');
-        }
+        $branch->is_active = !$branch->is_active;
+        $branch->save();
+
+        $status = $branch->is_active ? 'activa' : 'inactiva';
+        return redirect()->route('admin.branches.index')->with('success', "La sucursal '{$branch->name}' ha sido marcada como {$status}.");
     }
 }

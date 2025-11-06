@@ -96,16 +96,6 @@
                     </a>
                 @endif
 
-                <!-- 5. INFORMACIÓN ADICIONAL (Visible para todos) -->
-                 <div class="p-6 bg-white rounded-xl shadow-lg">
-                    <div class="flex items-center space-x-4">
-                        <span class="text-4xl text-yellow-600">💡</span>
-                        <div>
-                            <p class="text-xl font-semibold text-yellow-800">Misión Anthony's</p>
-                            <p class="text-sm text-gray-500">Asegurar la calidad artesanal y el servicio a cada cliente de nuestra cadena.</p>
-                        </div>
-                    </div>
-                </div>
 
             </div>
             <!-- FIN DE ACCESOS RÁPIDOS -->

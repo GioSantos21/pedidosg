@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Category extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description','is_active'];
 
     public function products()
     {
         return $this->hasMany(Product::class);
     }
+
+    protected $casts = [
+        'is_active' => 'boolean'
+    ];
 }

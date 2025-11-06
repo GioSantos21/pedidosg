@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\UserController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/login');
 
 // Ruta de Dashboard para usuarios estándar
 Route::get('/dashboard', function () {
@@ -73,8 +71,11 @@ Route::middleware('auth')->group(function () {
 
         // CRUD de Categorías y Productos (Principalmente Admin)
         Route::resource('categories', CategoryController::class);
+        Route::patch('categories/{category}/togggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
         Route::resource('products', ProductController::class);
+        Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
         Route::resource('branches', BranchController::class);
+        Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status');
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update']);
     });
 

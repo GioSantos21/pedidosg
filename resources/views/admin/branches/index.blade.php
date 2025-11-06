@@ -35,32 +35,47 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                     <th class="px-6 py-3 bg-gray-50">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($branches as $branch)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->id }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $branch->address ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $branch->phone ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.branches.edit', $branch) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+                           <tbody>
+                            @forelse ($branches as $branch)
+                                <tr>
+                                    <td class="...">{{ $branch->id }}</td>
+                                    <td class="...">{{ $branch->name }}</td>
+                                    <td class="...">{{ $branch->address ?? 'N/A' }}</td>
+                                    <td class="...">{{ $branch->phone ?? 'N/A' }}</td>
 
-                                            <form action="{{ route('admin.branches.destroy', $branch) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta sucursal?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay sucursales registradas.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+                                    {{-- NUEVA CELDA DE ESTADO --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        @if ($branch->is_active)
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activa</span>
+                                        @else
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- CELDA DE ACCIONES MODIFICADA --}}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <a href="{{ route('admin.branches.edit', $branch) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+
+                                        {{-- FORMULARIO PARA CAMBIAR ESTADO --}}
+                                        <form action="{{ route('admin.branches.toggle-status', $branch) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de esta sucursal?');">
+                                            @csrf
+                                            @method('PATCH')
+                                            @if ($branch->is_active)
+                                                <button type="submit" class="text-red-600 hover:text-red-900 ml-3">Desactivar</button>
+                                            @else
+                                                <button type="submit" class="text-green-600 hover:text-green-900 ml-3">Activar</button>
+                                            @endif
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                {{-- ... --}}
+                            @endforelse
+                        </tbody>
                         </table>
                     </div>
                     <div class="mt-4">

@@ -32,6 +32,13 @@
                             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                         </div>
 
+                        <div class="mt-4">
+                            <label for="is_active" class="inline-flex items-center">
+                                <input id="is_active" type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" checked>
+                                <span class="ml-2 text-sm text-gray-600">{{ __('Sucursal Activa') }}</span>
+                            </label>
+                        </div>
+
                         <div class="flex items-center justify-end mt-4 gap-x-4">
                             <a href="{{ route('admin.branches.index') }}" class="text-sm text-gray-600 hover:text-gray-900">
                                 Cancelar
