@@ -130,7 +130,7 @@
             </div>
 
             {{-- Botones de Acción para Gerente --}}
-            @if (auth()->user()->role === 'manager' && $order->status === 'Pendiente')
+            @if (auth()->user()->hasRole(['admin', 'production']) && $order->status === 'Pendiente')
                 <div class="flex justify-end space-x-4 pt-4">
                     <a href="{{ route('orders.edit', $order) }}" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-3.182 3.182l-5.3 5.3-.787 3.01 3.01-.787 5.3-5.3-2.23-2.23z"/></svg>

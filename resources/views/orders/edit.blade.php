@@ -257,7 +257,7 @@
                 </form>
 
                 <!-- FORMULARIO DE ANULACIÓN (Separado del formulario de edición principal) -->
-                @if($order->status !== 'Anulado' && $order->status !== 'Confirmado')
+                @if (auth()->user()->hasRole(['admin', 'production']) && $order->status !== 'Anulado' && $order->status !== 'Confirmado')
                     <div class="mt-8 pt-6 border-t border-gray-200">
                         <h4 class="text-lg font-semibold text-red-700 mb-3">{{ __('Anular Pedido') }}</h4>
                         <p class="text-sm text-gray-600 mb-4">{{ __('Si ya no se requiere este pedido, puede anularlo permanentemente.') }}</p>

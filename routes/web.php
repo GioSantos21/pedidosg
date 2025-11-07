@@ -55,11 +55,11 @@ Route::middleware('auth')->group(function () {
     // 4. Rutas de Edición y Actualización (Manager, Admin, Production pueden editar pedidos Pendientes)
     Route::get('orders/{order}/edit', [OrderController::class, 'edit'])
         ->name('orders.edit')
-        ->middleware('role:manager|admin|production');
+        ->middleware('role:admin|production');
 
     Route::put('orders/{order}', [OrderController::class, 'update'])
         ->name('orders.update')
-        ->middleware('role:manager|admin|production');
+        ->middleware('role:admin|production');
 
 
     // RUTAS ADMINISTRATIVAS - Protegidas por el middleware 'role:admin|production'
