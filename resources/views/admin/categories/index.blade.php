@@ -52,20 +52,21 @@
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.categories.edit', $category) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+                                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                        {{-- Botón Editar --}}
+                                        <a href="{{ route('admin.categories.edit', $category) }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Editar</a>
 
-                                            {{-- Formulario para eliminar --}}
-                                            <form action="{{ route('admin.categories.toggle-status', $category) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de esta categoría?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                @if ($category->is_active)
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 ml-3">Desactivar</button>
-                                                @else
-                                                    <button type="submit" class="text-green-600 hover:text-green-900 ml-3">Activar</button>
-                                                @endif
-                                            </form>
-                                        </td>
+                                        {{-- Botón Activar/Desactivar --}}
+                                        <form action="{{ route('admin.categories.toggle-status', $category) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de esta categoría?');">
+                                            @csrf
+                                            @method('PATCH')
+                                            @if ($category->is_active)
+                                                <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Desactivar</button>
+                                            @else
+                                                <button type="submit" class="inline-block bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Activar</button>
+                                            @endif
+                                        </form>
+                                    </td>
                                     </tr>
                                 @endforeach
                             </tbody>

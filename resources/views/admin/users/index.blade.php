@@ -47,8 +47,9 @@
                                             {{-- Usamos ?? 'N/A' por si la sucursal es NULL --}}
                                             {{ $user->branch->name ?? 'N/A' }}
                                         </td>
+
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900">Editar Rol/Sucursal</a>
+                                            <a href="{{ route('admin.users.edit', $user) }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Editar Rol/Sucursal</a>
                                         </td>
                                     </tr>
                                 @empty
