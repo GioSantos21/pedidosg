@@ -20,8 +20,7 @@ return [
     ],
 
     'current_password' => 'La :attribute actual es incorrecta.',
-
-    // AÑADE ESTA CLAVE
+    'unique' => 'El campo :attribute ya ha sido registrado.',
     'required' => 'El campo :attribute es obligatorio.',
 
     // ¡BONUS! Esto traduce los nombres de los campos

@@ -32,29 +32,54 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user', 'branches'));
     }
 
-    /**
+   /**
      * Actualiza el rol y la sucursal de un usuario.
      */
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id) // Regla ÚNICA: ignora al usuario actual
+            ],
+            'password' => [
+                'nullable', // PERMITE DEJARLO VACÍO
+                'confirmed',
+                Rules\Password::defaults()
+            ],
             'role' => ['required', Rule::in(['admin', 'production', 'manager'])],
-
-            // 'branch_id' es requerido SOLO SI el rol es 'manager'
             'branch_id' => [
                 Rule::requiredIf($request->role === 'manager'),
-                'nullable', // Permite ser nulo si no es manager
-                'exists:branches,id' // Debe existir en la tabla branches
+                'nullable',
+                'exists:branches,id'
             ],
         ]);
 
-        // Lógica de negocio: Si el rol no es 'manager',
-        // nos aseguramos de que branch_id sea NULL.
-        if ($validated['role'] !== 'manager') {
-            $validated['branch_id'] = null;
+        // Preparamos los datos básicos
+        $dataToUpdate = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+        ];
+
+        // Lógica de Contraseña:
+        // SOLO si el campo 'password' no está vacío, lo actualizamos.
+        if ($request->filled('password')) {
+            $dataToUpdate['password'] = Hash::make($validated['password']);
         }
 
-        $user->update($validated);
+        // Lógica de Sucursal:
+        if ($validated['role'] !== 'manager') {
+            $dataToUpdate['branch_id'] = null;
+        } else {
+            $dataToUpdate['branch_id'] = $validated['branch_id'];
+        }
+
+        $user->update($dataToUpdate);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado exitosamente.');
     }
