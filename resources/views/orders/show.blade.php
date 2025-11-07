@@ -37,10 +37,13 @@
                         </div>
 
                         <div class="sm:pt-6 w-full sm:w-auto">
-                            <x-primary-button class="w-full justify-center">
+                            <button type="submit"
+                                    class="w-full justify-center inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-800 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
                                 Actualizar Estado
-                            </x-primary-button>
+                            </button>
+
                         </div>
+
                     </form>
                 </div>
             @endif
@@ -73,15 +76,15 @@
 
             {{-- Sección de Información de la Sucursal --}}
             <div class="border-b pb-6">
-                <h3 class="text-xl font-semibold text-gray-700 mb-3">Información del Solicitante</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Información del Solicitante</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Sucursal Solicitante</p>
+                        <p class="text-sm font-medium text-gray-900">Sucursal Solicitante</p>
                         <p class="text-lg font-semibold text-indigo-600">{{ $order->branch->name ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Gerente Responsable</p>
-                        <p class="text-lg text-gray-800">{{ $order->user->name ?? 'Usuario Desconocido' }}</p>
+                        <p class="text-sm font-medium text-gray-900">Gerente Responsable</p>
+                        <p class="text-lg font-semibold text-indigo-600">{{ $order->user->name ?? 'Usuario Desconocido' }}</p>
                     </div>
                 </div>
                 @if ($order->completed_at)
@@ -95,28 +98,46 @@
             {{-- Tabla de Ítems del Pedido --}}
             <div class="space-y-4">
                 <h3 class="text-xl font-semibold text-gray-700">Productos Solicitados</h3>
-                <div class="overflow-x-auto border rounded-lg">
+
+                <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+
+                        <thead class="bg-[#874ab3] ">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                    Producto
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                    Unidad
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                    Cantidad
+                                </th>
                             </tr>
                         </thead>
+
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($order->orderItems as $item)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item->product->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $item->product->unit }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-base font-semibold text-gray-700">{{ $item->quantity }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ $item->product->name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                        {{ $item->product->unit }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-base font-semibold text-gray-900">
+                                        {{ $item->quantity }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot>
+
+                        <tfoot class="bg-[#874ab3]">
                             <tr>
-                                <td colspan="2" class="px-6 py-3 text-right text-base font-bold text-gray-700">Total Items:</td>
-                                <td class="px-6 py-3 text-right text-base font-bold text-indigo-600">{{ $order->orderItems->sum('quantity') }}</td>
+                                <td colspan="2" class="px-6 py-3 text-right text-base font-bold text-white">Total Items:</td>
+                                <td class="px-6 py-3 text-right text-base font-bold text-white">
+                                    {{ $order->orderItems->sum('quantity') }}
+                                </td>
                             </tr>
                         </tfoot>
                     </table>
@@ -124,7 +145,7 @@
             </div>
 
             {{-- Notas Adicionales --}}
-            <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="bg-gray-100 p-4 rounded-lg">
                 <p class="text-sm font-medium text-gray-500">Notas Adicionales:</p>
                 <p class="text-gray-800 mt-1 italic">{{ $order->notes ?? 'N/A' }}</p>
             </div>
@@ -141,9 +162,10 @@
             @endif
 
             {{-- Botón de Regreso --}}
-            <div class="mt-6">
-                <a href="{{ route('orders.index') }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Volver al Listado</a>
-            </div>
+           <a href="{{ route('orders.index') }}"
+            class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
+                &larr; Volver al Listado
+            </a>
 
         </div>
     </div>
