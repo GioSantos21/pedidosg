@@ -11,12 +11,28 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
 
-                    <div class="mb-4">
-                        <p><strong>Usuario:</strong> {{ $user->name }}</p>
-                        <p><strong>Email:</strong> {{ $user->email }}</p>
+                    <div class="space-y-4">
+                     <div>
+                        <x-input-label for="name" :value="__('Usuario')" />
+                        <x-text-input id="name"
+                                    type="text"
+                                    name="name"
+                                    :value="$user->name"
+                                    disabled
+                                    class="block mt-1 w-full bg-gray-100 border-gray-300 text-gray-500" />
                     </div>
 
-                    <hr class="my-4">
+                    <div class="mt-4"> <x-input-label for="email" :value="__('Email')" />
+                        <x-text-input id="email"
+                                    type="email"
+                                    name="email"
+                                    :value="$user->email"
+                                    disabled
+                                    class="block mt-1 w-full bg-gray-100 border-gray-300 text-gray-500" />
+                    </div>
+                    </div>
+
+                    <hr class="my-6">
 
                     <form method="POST" action="{{ route('admin.users.update', $user) }}">
                         @csrf
