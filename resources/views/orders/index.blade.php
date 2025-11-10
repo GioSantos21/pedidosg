@@ -4,19 +4,19 @@
 
             {{-- Mensajes de Sesión (Éxito o Error) --}}
             @if (session('success'))
-                <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+                <div class="p-4 mb-4 text-lg text-green-700 bg-green-100 rounded-lg" role="alert">
                     <span class="font-medium">Éxito:</span> {{ session('success') }}
                 </div>
             @endif
             @if (session('error'))
-                <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+                <div class="p-4 mb-4 text-lg text-red-700 bg-red-100 rounded-lg" role="alert">
                     <span class="font-medium">Error:</span> {{ session('error') }}
                 </div>
             @endif
 
             <div class="p-6">
                 @if ($orders->isEmpty())
-                    <div class="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                    <div class="p-4 text-center text-black bg-gray-50 rounded-lg">
                         No se encontraron pedidos en este momento.
                         @if (auth()->user()->role === 'manager')
                             <div class="mt-2">
@@ -38,65 +38,67 @@
                             </a>
                         </div>
                     @endif
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        ID Pedido
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Sucursal / Gerente
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Fecha Solicitud
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Items
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Estado
-                                    </th>
-                                    <th scope="col" class="relative px-6 py-3">
-                                        <span class="sr-only">Acciones</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($orders as $order)
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-[#522d6d]">
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            #{{ $order->id }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-indigo-700">{{ $order->branch->name ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">por {{ $order->user->name ?? 'Usuario Eliminado' }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $order->created_at->format('d/m/Y H:i') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $order->orderItems ? $order->orderItems->sum('quantity') : 0 }} unidades
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @php
-                                                $color = match($order->status) {
-                                                    'Pendiente' => 'bg-yellow-100 text-yellow-800',
-                                                    'Confirmado' => 'bg-green-100 text-green-800',
-                                                    'Anulado' => 'bg-red-100 text-red-800',
-                                                    default => 'bg-gray-100 text-gray-800',
-                                                };
-                                            @endphp
-                                            <span class="px-3 inline-flex text-xs leading-5 font-semibold rounded-full {{ $color }}">
-                                                {{ $order->status }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900">Ver Detalles</a>
-                                        </td>
+                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                            ID Pedido
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                            Sucursal / Gerente
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                            Fecha Solicitud
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                            Items
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
+                                            Estado
+                                        </th>
+                                        <th scope="col" class="relative px-6 py-3">
+                                            <span class="sr-only">Acciones</span>
+                                        </th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach ($orders as $order)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
+                                                #{{ $order->id }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-lg font-medium text-indigo-700">{{ $order->branch->name ?? 'N/A' }}</div>
+                                                <div class="text-base text-blac">por {{ $order->user->name ?? 'Usuario Eliminado' }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-lg text-black">
+                                                {{ $order->created_at->format('d/m/Y H:i') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-lg text-black">
+                                                {{ $order->orderItems ? $order->orderItems->sum('quantity') : 0 }} unidades
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                                @php
+                                                    $color = match($order->status) {
+                                                        'Pendiente' => 'bg-yellow-100 text-yellow-800 ',
+                                                        'Confirmado' => 'bg-green-100 text-green-800',
+                                                        'Anulado' => 'bg-red-100 text-red-800',
+                                                        default => 'bg-gray-100 text-gray-800',
+                                                    };
+                                                @endphp
+                                                <span class="px-3 inline-flex text-lg leading-5 font-semibold rounded-full {{ $color }}">
+                                                    {{ $order->status }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-lg font-medium">
+                                                <a href="{{ route('orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900">Ver Detalles</a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     {{-- Paginación --}}

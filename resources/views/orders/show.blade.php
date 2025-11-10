@@ -16,8 +16,8 @@
 
             {{-- Bloque de Estado y Acciones (Sólo para Producción/Admin) --}}
             @if (auth()->user()->hasRole(['admin', 'production']))
-                <div class="bg-indigo-50 p-6 rounded-lg border-l-4 border-indigo-500">
-                    <h3 class="text-xl font-bold text-indigo-700 mb-4 flex items-center">
+                <div class="bg-[#522d6d] p-6 rounded-lg border-l-4 border-purple-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
                         Gestión de Producción
                     </h3>
                     <form method="POST" action="{{ route('orders.updateStatus', $order) }}" class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -25,7 +25,7 @@
                         @method('PUT')
 
                         <div class="flex-1 w-full">
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Cambiar Estado:</label>
+                            <label for="status" class="block text-sm font-medium text-white mb-1">Cambiar Estado:</label>
                             <select id="status" name="status" required class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full">
                                 <option value="Pendiente" @selected($order->status === 'Pendiente')>Pendiente</option>
                                 <option value="Confirmado" @selected($order->status === 'Confirmado')>Confirmado (Producción Terminada)</option>
@@ -51,15 +51,15 @@
             {{-- Sección de Resumen del Pedido --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b pb-6">
                 <div>
-                    <p class="text-sm font-medium text-gray-500">ID de Pedido</p>
+                    <p class="text-sm font-medium text-gray-900">ID de Pedido</p>
                     <p class="text-2xl font-bold text-gray-900">#{{ $order->id }}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Fecha de Solicitud</p>
-                    <p class="text-lg font-medium text-gray-800">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                    <p class="text-sm font-medium text-gray-900">Fecha de Solicitud</p>
+                    <p class="text-lg font-medium text-gray-800">{{ $order->created_at->format('d/m/Y - H:i') }}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Estado Actual</p>
+                    <p class="text-sm font-medium text-gray-900">Estado Actual</p>
                     @php
                         $color = match($order->status) {
                             'Pendiente' => 'bg-yellow-500',
@@ -89,7 +89,7 @@
                 </div>
                 @if ($order->completed_at)
                     <div class="mt-4">
-                        <p class="text-sm font-medium text-gray-500">Completado el</p>
+                        <p class="text-sm font-medium text-gray-900">Completado el</p>
                         <p class="text-lg text-gray-800">{{ $order->completed_at->format('d/m/Y H:i') }}</p>
                     </div>
                 @endif
@@ -102,15 +102,15 @@
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
                     <table class="min-w-full divide-y divide-gray-200">
 
-                        <thead class="bg-[#874ab3] ">
+                        <thead class="bg-[#522d6d] ">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
                                     Producto
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
                                     Unidad
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-white uppercase tracking-wider"> {{-- TEXTO BLANCO --}}
+                                <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
                                     Cantidad
                                 </th>
                             </tr>
@@ -119,23 +119,23 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($order->orderItems as $item)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
                                         {{ $item->product->name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-lg text-gray-900">
                                         {{ $item->product->unit }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-base font-semibold text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-lg font-semibold text-gray-900">
                                         {{ $item->quantity }}
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
 
-                        <tfoot class="bg-[#874ab3]">
+                        <tfoot class="bg-[#522d6d]">
                             <tr>
-                                <td colspan="2" class="px-6 py-3 text-right text-base font-bold text-white">Total Items:</td>
-                                <td class="px-6 py-3 text-right text-base font-bold text-white">
+                                <td colspan="2" class="px-6 py-3 text-right text-lg font-bold text-white">Total Items:</td>
+                                <td class="px-6 py-3 text-center text-lg font-bold text-white">
                                     {{ $order->orderItems->sum('quantity') }}
                                 </td>
                             </tr>
@@ -146,7 +146,7 @@
 
             {{-- Notas Adicionales --}}
             <div class="bg-gray-100 p-4 rounded-lg">
-                <p class="text-sm font-medium text-gray-500">Notas Adicionales:</p>
+                <p class="text-sm font-medium text-gray-900">Notas Adicionales:</p>
                 <p class="text-gray-800 mt-1 italic">{{ $order->notes ?? 'N/A' }}</p>
             </div>
 

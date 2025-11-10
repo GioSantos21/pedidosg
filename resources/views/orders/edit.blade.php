@@ -102,9 +102,16 @@
 
                 <!-- INFORMACIÓN DE LA ORDEN -->
                 <div class="mb-6 border-b pb-4">
-                    <p class="text-sm text-gray-500">
-                        Sucursal: {{ $order->branch->name }} | Solicitante: {{ $order->user->name }} | Fecha: {{ $order->created_at->format('d/m/Y H:i') }}
-                    </p>
+                    <p class="text-sm font-bold text-lg text-gray-900">
+                    Sucursal:
+                    <span class="text-purple-700">{{ $order->branch->name }}</span> |
+
+                    Solicitante:
+                    <span class="text-purple-700">{{ $order->user->name }}</span> |
+
+                    Fecha:
+                    <span class="text-purple-700">{{ $order->created_at->format('d/m/Y - H:i') }}</span>
+                </p>
                     <p class="text-lg font-bold mt-2">Estado Actual:
                         <span class="px-2 py-1 rounded-full text-sm font-semibold
                             @if($order->status == 'Pendiente') bg-yellow-100 text-yellow-800
@@ -133,7 +140,7 @@
 
                     <!-- NOTAS ADICIONALES (Etiqueta HTML estándar) -->
                     <div>
-                        <label for="notes" class="block font-medium text-sm text-gray-700">
+                        <label for="notes" class="block font-medium text-sm text-black">
                             {{ __('Notas Adicionales para el Pedido') }}
                         </label>
                         <textarea id="notes" name="notes" x-model="notes" rows="3" class="w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">{{ old('notes', $order->notes) }}</textarea>
@@ -145,11 +152,11 @@
                     <h3 class="text-xl font-semibold border-b pb-2">Productos del Pedido</h3>
 
                     <!-- INTERFAZ DE FILTRADO Y AÑADIDO (CORREGIDA) -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 border rounded-lg bg-gray-50">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border rounded-lg  bg-[#522d6d] p-6 border-l-4 border-purple-800">
 
                         <!-- Columna 1: Selección de Categoría -->
                         <div>
-                            <label for="category_select" class="block font-medium text-sm text-gray-700">
+                            <label for="category_select" class="block font-medium text-sm text-white">
                                 {{ __('Línea / Categoría') }}
                             </label>
                             <select x-model="selectedCategory" @change="searchTerm = ''; selectedProductId = ''" id="category_select" class="w-full h-10 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
@@ -162,7 +169,7 @@
 
                         <!-- Columna 2: Búsqueda (Se añadió @keydown.enter.prevent para evitar envío del formulario) -->
                         <div>
-                            <label for="search_term" class="block font-medium text-sm text-gray-700">
+                            <label for="search_term" class="block font-medium text-sm text-white">
                                 {{ __('Buscar Producto (Código / Nombre)') }}
                             </label>
                             <input type="text"
@@ -175,7 +182,7 @@
 
                         <!-- Columna 3: Producto Filtrado y Botón Añadir -->
                         <div>
-                            <label for="product_select" class="block font-medium text-sm text-gray-700">
+                            <label for="product_select" class="block font-medium text-sm text-white">
                                 {{ __('Selecciona el Producto') }}
                             </label>
                             <div class="flex space-x-2">
@@ -185,7 +192,7 @@
                                         <option :value="product.id" x-text="product.product_code + ' - ' + product.name + ' (' + product.unit + ')'"></option>
                                     </template>
                                 </select>
-                                <button type="button" @click="addItem(selectedProductId)" :disabled="!selectedProductId" class="inline-flex items-center flex-shrink-0 h-10 px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-900 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-50 transition ease-in-out duration-150 shadow-md">
+                                <button type="button" @click="addItem(selectedProductId)" :disabled="!selectedProductId" class="inline-flex items-center flex-shrink-0 h-10 px-4 py-2 bg-purple-400 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-500 active:bg-purple-950 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-75 transition ease-in-out duration-150 shadow-md">
                                     {{ __('Añadir') }}
                                 </button>
                             </div>
@@ -194,15 +201,15 @@
 
 
                     <!-- TABLA DE PRODUCTOS ACTUALES -->
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
                         <table class="min-w-full divide-y divide-gray-200 shadow-md sm:rounded-lg">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-[#522d6d] ">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CÓDIGO</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UNIDAD</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CANTIDAD</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ACCIÓN</th>
+                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">CÓDIGO</th>
+                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
+                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">UNIDAD</th>
+                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">CANTIDAD</th>
+                                    <th class="px-6 py-3 text-leff text-base font-bold text-white uppercase tracking-wider">ACCIÓN</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -211,18 +218,18 @@
                                         <!-- Campo Oculto para Product ID -->
                                         <input type="hidden" :name="'orderItems[' + index + '][product_id]'" :value="item.product_id">
 
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.name"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.unit"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="item.name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="item.unit"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-lg  ">
                                             <!-- Campo de Cantidad -->
                                             <input type="number"
                                                    :name="'orderItems[' + index + '][quantity]'"
                                                    x-model.number="item.quantity"
                                                    min="1"
-                                                   class="w-20 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm p-2 text-sm">
+                                                   class="w-20 text-center border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm p-2 text-base">
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             <!-- Botón de Eliminar Corregido -->
                                             <button type="button" @click="removeItem(index)" class="text-red-600 hover:text-red-900 font-bold">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
@@ -250,7 +257,7 @@
                             {{ __('Guardar Cambios del Pedido') }}
                         </button>
 
-                        <a href="{{ route('orders.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <a href="{{ route('orders.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 hover:text-gray-300 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
                             {{ __('Cancelar y Volver al Listado') }}
                         </a>
                     </div>
@@ -260,7 +267,7 @@
                 @if (auth()->user()->hasRole(['admin', 'production']) && $order->status !== 'Anulado' && $order->status !== 'Confirmado')
                     <div class="mt-8 pt-6 border-t border-gray-200">
                         <h4 class="text-lg font-semibold text-red-700 mb-3">{{ __('Anular Pedido') }}</h4>
-                        <p class="text-sm text-gray-600 mb-4">{{ __('Si ya no se requiere este pedido, puede anularlo permanentemente.') }}</p>
+                        <p class="text-sm text-black mb-4">{{ __('Si ya no se requiere este pedido, puede anularlo permanentemente.') }}</p>
                         <form method="POST" action="{{ route('orders.updateStatus', $order) }}" onsubmit="return confirm('¿Estás seguro de que deseas anular este pedido? Esta acción no se puede deshacer.');">
                             @csrf
                             @method('PUT')
