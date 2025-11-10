@@ -12,9 +12,35 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Menu') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
+                        {{ __('Pedidos') }}
+                    </x-nav-link>
+
+                    @if (Auth::user()->hasRole(['admin', 'production']))
+                        <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                            {{ __('Categorías') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
+                            {{ __('Productos') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if (Auth::user()->hasRole('admin'))
+                        <x-nav-link :href="route('admin.branches.index')" :active="request()->routeIs('admin.branches.*')">
+                            {{ __('Sucursales') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            {{ __('Usuarios') }}
+                        </x-nav-link>
+                    @endif
+
                 </div>
             </div>
 

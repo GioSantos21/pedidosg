@@ -25,5 +25,11 @@
     "Delete Account": "Eliminar Cuenta",
     "Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.": "Una vez que tu cuenta sea eliminada, todos sus recursos y datos serán borrados permanentemente. Antes de eliminar tu cuenta, por favor descarga cualquier dato o información que desees retener.",
     "Are you sure you want to delete your account?": "¿Estás seguro de que quieres eliminar tu cuenta?",
-    "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Una vez que tu cuenta sea eliminada, todos sus recursos y datos serán borrados permanentemente. Por favor, introduce tu contraseña para confirmar que deseas eliminar permanentemente tu cuenta."
+    "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Una vez que tu cuenta sea eliminada, todos sus recursos y datos serán borrados permanentemente. Por favor, introduce tu contraseña para confirmar que deseas eliminar permanentemente tu cuenta.",
+    "Menu": "Menu",
+    "Pedidos": "Pedidos",
+    "Categorías": "Categorías",
+    "Productos": "Productos",
+    "Sucursales": "Sucursales",
+    "Usuarios": "Usuarios"
 }
