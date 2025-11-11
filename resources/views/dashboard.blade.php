@@ -87,7 +87,7 @@
                 @if (Auth::user()->role === 'admin')
                     <a href="{{ route('admin.users.index') }}" class="block p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
                         <div class="flex items-center space-x-4">
-                                <span class="text-4xl text-cyan-600">🧑</span>
+                                <span class="text-4xl text-cyan-600">👨‍💼</span>
                             <div>
                                 <p class="text-xl font-semibold text-cyan-800">Gestión de Usuarios</p>
                                 <p class="text-sm text-gray-500">Asignar roles y sucursales a los empleados.</p>

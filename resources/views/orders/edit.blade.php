@@ -205,11 +205,11 @@
                         <table class="min-w-full divide-y divide-gray-200 shadow-md sm:rounded-lg">
                             <thead class="bg-[#522d6d] ">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">CÓDIGO</th>
-                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
-                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">UNIDAD</th>
-                                    <th class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">CANTIDAD</th>
-                                    <th class="px-6 py-3 text-leff text-base font-bold text-white uppercase tracking-wider">ACCIÓN</th>
+                                    <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">CÓDIGO</th>
+                                    <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
+                                    <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">UNIDAD</th>
+                                    <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">CANTIDAD</th>
+                                    <th class="px-6 py-3 text-leff text-sm font-bold text-white uppercase tracking-wider">ACCIÓN</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -218,10 +218,10 @@
                                         <!-- Campo Oculto para Product ID -->
                                         <input type="hidden" :name="'orderItems[' + index + '][product_id]'" :value="item.product_id">
 
-                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="item.name"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-900" x-text="item.unit"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-lg  ">
+                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="item.name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="item.unit"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-base  ">
                                             <!-- Campo de Cantidad -->
                                             <input type="number"
                                                    :name="'orderItems[' + index + '][quantity]'"

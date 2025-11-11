@@ -11,36 +11,55 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+               <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
 
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <x-slot name="icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                            </svg>
+                        </x-slot>
                         {{ __('Menu') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
+                        <x-slot name="icon">
+                            <span class="text-2xl text-blue-600">📦</span>
+                        </x-slot>
                         {{ __('Pedidos') }}
                     </x-nav-link>
 
                     @if (Auth::user()->hasRole(['admin', 'production']))
                         <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                            <x-slot name="icon">
+                                <span class="text-2x1 text-purple-600">📋</span>
+                            </x-slot>
                             {{ __('Categorías') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
+                            <x-slot name="icon">
+                                <span class="text-2xl text-green-600">🍰</span>
+                            </x-slot>
                             {{ __('Productos') }}
                         </x-nav-link>
                     @endif
 
                     @if (Auth::user()->hasRole('admin'))
                         <x-nav-link :href="route('admin.branches.index')" :active="request()->routeIs('admin.branches.*')">
+                            <x-slot name="icon">
+                                <span class="text-2x1 text-red-600">🏢</span>
+                            </x-slot>
                             {{ __('Sucursales') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            <x-slot name="icon">
+                                <span class="text-2x1 text-cyan-600">👨‍💼</span>
+                            </x-slot>
                             {{ __('Usuarios') }}
                         </x-nav-link>
                     @endif
-
                 </div>
             </div>
 
@@ -94,15 +113,39 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+                {{ __('Menu') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
+                {{ __('Pedidos') }}
+            </x-responsive-nav-link>
+
+            @if (Auth::user()->hasRole(['admin', 'production']))
+                <x-responsive-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                    {{ __('Categorías') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
+                    {{ __('Productos') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (Auth::user()->hasRole('admin'))
+                <x-responsive-nav-link :href="route('admin.branches.index')" :active="request()->routeIs('admin.branches.*')">
+                    {{ __('Sucursales') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                    {{ __('Usuarios') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                <div class="font-medium text-base text-white">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-white">{{ Auth::user()->email }}</div>
             </div>
 
             <div class="mt-3 space-y-1">

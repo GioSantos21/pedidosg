@@ -26,57 +26,58 @@
                        text-white font-bold py-2 px-4 rounded mb-4 inline-block">
                         Nueva Sucursal
                     </a>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-[#522d6d]">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">ID</th>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Nombre</th>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Dirección</th>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Teléfono</th>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-xs uppercase text-white ">Acciones</th>
+                                    </tr>
+                                </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse ($branches as $branch)
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->id }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->address ?? 'N/A' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $branch->phone ?? 'N/A' }}</td>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                    <th class="px-6 py-3 bg-gray-50">Acciones</th>
-                                </tr>
-                            </thead>
-                           <tbody>
-                            @forelse ($branches as $branch)
-                                <tr>
-                                    <td class="...">{{ $branch->id }}</td>
-                                    <td class="...">{{ $branch->name }}</td>
-                                    <td class="...">{{ $branch->address ?? 'N/A' }}</td>
-                                    <td class="...">{{ $branch->phone ?? 'N/A' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            @if ($branch->is_active)
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activa</span>
+                                            @else
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
+                                            @endif
+                                        </td>
 
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        @if ($branch->is_active)
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activa</span>
-                                        @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
-                                        @endif
+                                        {{-- CELDA DE ACCIONES MODIFICADA --}}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                        {{-- Botón Editar --}}
+                                        <a href="{{ route('admin.branches.edit', $branch) }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Editar</a>
+
+                                        {{-- Botón Activar/Desactivar --}}
+                                        <form action="{{ route('admin.branches.toggle-status', $branch) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de esta sucursal?');">
+                                            @csrf
+                                            @method('PATCH')
+                                            @if ($branch->is_active)
+                                                <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Desactivar</button>
+                                            @else
+                                                <button type="submit" class="inline-block bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Activar</button>
+                                            @endif
+                                        </form>
                                     </td>
-
-                                    {{-- CELDA DE ACCIONES MODIFICADA --}}
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                    {{-- Botón Editar --}}
-                                    <a href="{{ route('admin.branches.edit', $branch) }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Editar</a>
-
-                                    {{-- Botón Activar/Desactivar --}}
-                                    <form action="{{ route('admin.branches.toggle-status', $branch) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado de esta sucursal?');">
-                                        @csrf
-                                        @method('PATCH')
-                                        @if ($branch->is_active)
-                                            <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Desactivar</button>
-                                        @else
-                                            <button type="submit" class="inline-block bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Activar</button>
-                                        @endif
-                                    </form>
-                                </td>
-                                </tr>
-                            @empty
-                                {{-- ... --}}
-                            @endforelse
-                        </tbody>
-                        </table>
+                                    </tr>
+                                @empty
+                                    {{-- ... --}}
+                                @endforelse
+                            </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="mt-4">
                         {{ $branches->links() }}

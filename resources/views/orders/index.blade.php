@@ -42,19 +42,19 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-[#522d6d]">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                        <th scope="col" class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                                             ID Pedido
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                        <th scope="col" class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                                             Sucursal / Gerente
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                        <th scope="col" class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                                             Fecha Solicitud
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                        <th scope="col" class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                                             Items
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
+                                        <th scope="col" class="px-6 py-3 text-center text-sm font-bold text-white uppercase tracking-wider">
                                             Estado
                                         </th>
                                         <th scope="col" class="relative px-6 py-3">
@@ -65,17 +65,17 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach ($orders as $order)
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 #{{ $order->id }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-lg font-medium text-indigo-700">{{ $order->branch->name ?? 'N/A' }}</div>
-                                                <div class="text-base text-blac">por {{ $order->user->name ?? 'Usuario Eliminado' }}</div>
+                                                <div class="text-sm font-medium text-indigo-700">{{ $order->branch->name ?? 'N/A' }}</div>
+                                                <div class="text-sm text-blac">por {{ $order->user->name ?? 'Usuario Eliminado' }}</div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-lg text-black">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {{ $order->created_at->format('d/m/Y H:i') }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-lg text-black">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {{ $order->orderItems ? $order->orderItems->sum('quantity') : 0 }} unidades
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -87,11 +87,11 @@
                                                         default => 'bg-gray-100 text-gray-800',
                                                     };
                                                 @endphp
-                                                <span class="px-3 inline-flex text-lg leading-5 font-semibold rounded-full {{ $color }}">
+                                                <span class="px-3 inline-flex text-sm leading-5 font-semibold rounded-full {{ $color }}">
                                                     {{ $order->status }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-lg font-medium">
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <a href="{{ route('orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900">Ver Detalles</a>
                                             </td>
                                         </tr>

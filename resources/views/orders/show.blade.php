@@ -104,13 +104,13 @@
 
                         <thead class="bg-[#522d6d] ">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-base font-bold text-white uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                                     Producto
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-sm font-bold text-white uppercase tracking-wider">
                                     Unidad
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-center text-base font-bold text-white uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-sm font-bold text-white uppercase tracking-wider">
                                     Cantidad
                                 </th>
                             </tr>
@@ -119,13 +119,13 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($order->orderItems as $item)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
                                         {{ $item->product->name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-lg text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-900">
                                         {{ $item->product->unit }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-lg font-semibold text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-base font-semibold text-gray-900">
                                         {{ $item->quantity }}
                                     </td>
                                 </tr>
@@ -134,8 +134,8 @@
 
                         <tfoot class="bg-[#522d6d]">
                             <tr>
-                                <td colspan="2" class="px-6 py-3 text-right text-lg font-bold text-white">Total Items:</td>
-                                <td class="px-6 py-3 text-center text-lg font-bold text-white">
+                                <td colspan="2" class="px-6 py-3 text-right text-base font-bold text-white">Total Items:</td>
+                                <td class="px-6 py-3 text-center text-base font-bold text-white">
                                     {{ $order->orderItems->sum('quantity') }}
                                 </td>
                             </tr>

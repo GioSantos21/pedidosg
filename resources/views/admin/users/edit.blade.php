@@ -85,12 +85,18 @@
 
 
                         <div class="flex items-center justify-end mt-4 gap-x-4">
-                            <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-600 hover:text-gray-900">
+
+
+                            <a href="{{ route('admin.users.index') }}"
+                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
                                 Cancelar
                             </a>
-                            <x-primary-button>
-                                {{ __('Actualizar Usuario') }}
-                            </x-primary-button>
+
+                             <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-800 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
+                                {{ __('Actualizar Producto') }}
+                            </button>
+
                         </div>
                     </form>
 
