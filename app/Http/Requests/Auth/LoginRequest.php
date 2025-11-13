@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-
 class LoginRequest extends FormRequest
 {
     /**
@@ -37,20 +36,41 @@ class LoginRequest extends FormRequest
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function authenticate(): void
-    {
-        $this->ensureIsNotRateLimited();
+        public function authenticate(): void
+        {
+            $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('name', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            // --- PASO 1: Intentar autenticar SÓLO con nombre y contraseña ---
+            // (Quitamos la condición 'is_active' de aquí)
+            $credentials = $this->only('name', 'password');
 
-            throw ValidationException::withMessages([
-                'name' => trans('auth.failed'),
-            ]);
+            if (! Auth::attempt($credentials, $this->boolean('remember'))) {
+                // SI FALLA: El nombre o la contraseña son incorrectos.
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'name' => trans('auth.failed'), // Mensaje: "Estas credenciales no coinciden..."
+                ]);
+            }
+
+            // --- PASO 2: Las credenciales SON correctas. Ahora revisamos el estado. ---
+            $user = Auth::user(); // Obtenemos el usuario que acaba de iniciar sesión
+
+            if (! $user->is_active) {
+                // SI ESTÁ INACTIVO: Lo expulsamos y mostramos el error personalizado.
+                Auth::guard('web')->logout(); // Forzamos el cierre de sesión
+
+                $this->session()->invalidate();
+                $this->session()->regenerateToken();
+
+                throw ValidationException::withMessages([
+                    'name' => 'Tu usuario se encuentra desactivado por el momento.', // ¡Tu mensaje personalizado!
+                ]);
+            }
+
+            // --- PASO 3: Las credenciales son correctas y está activo ---
+            RateLimiter::clear($this->throttleKey());
         }
-
-        RateLimiter::clear($this->throttleKey());
-    }
 
     /**
      * Ensure the login request is not rate limited.

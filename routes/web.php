@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('branches', BranchController::class);
         Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status');
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'create', 'store']);
+        Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     });
 
 });

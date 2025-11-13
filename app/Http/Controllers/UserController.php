@@ -124,6 +124,26 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Usuario creado exitosamente.');
     }
 
+
+    /**
+     * Cambia el estado (activo/inactivo) de un usuario.
+     */
+    public function toggleStatus(User $user)
+    {
+        // Seguridad: No permitir desactivarse a uno mismo
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'No puedes desactivar tu propia cuenta.');
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $status = $user->is_active ? 'activo' : 'inactivo';
+        return redirect()->route('admin.users.index')
+            ->with('success', "El usuario '{$user->name}' ha sido marcado como {$status}.");
+    }
+
     // El registro (create/store) lo maneja Breeze.
     // El borrado (destroy) es delicado y lo omitiremos.
 }

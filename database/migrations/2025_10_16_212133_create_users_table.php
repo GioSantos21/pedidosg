@@ -18,11 +18,12 @@ return new class extends Migration
             $table->enum('role', ['admin', 'manager', 'production'])->default('manager');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
 
-        // ... (El resto de password_reset_tokens y sessions permanece igual) ...
+
     }
 
     /**

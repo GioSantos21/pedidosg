@@ -31,6 +31,7 @@
                                         <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Email</th>
                                         <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Rol</th>
                                         <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Sucursal Asignada</th>
+                                        <th class="px-6 py-3 text-left text-xs fond-bold text-white uppercase tracking-wider">Estado</th>
                                         <th class="px-6 py-3 text-white uppercase text-xs  text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -48,8 +49,29 @@
                                                 {{ $user->branch->name ?? 'N/A' }}
                                             </td>
 
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            {{-- NUEVA Celda de Estado --}}
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                @if ($user->is_active)
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                                @else
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                                @endif
+                                            </td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <a href="{{ route('admin.users.edit', $user) }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Editar</a>
+
+                                                @if ($user->id !== Auth::id()) {{-- No mostrar botón si soy yo mismo --}}
+                                                    <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Cambiar estado de este usuario?');">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        @if ($user->is_active)
+                                                            <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Desactivar</button>
+                                                        @else
+                                                            <button type="submit" class="inline-block bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-150">Activar</button>
+                                                        @endif
+                                                    </form>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
