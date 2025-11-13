@@ -34,7 +34,7 @@
                         <div class="flex justify-start mb-4">
                             <a href="{{ route('orders.createIndex') }}" class="bg-[#874ab3] hover:bg-[#623579]
                      text-white font-bold py-2 px-4 rounded mb-4 inline-block">
-                                + Crear Nuevo Pedido
+                                 Crear Nuevo Pedido
                             </a>
                         </div>
                     @endif

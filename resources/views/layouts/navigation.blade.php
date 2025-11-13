@@ -1,17 +1,17 @@
-<nav x-data="{ open: false }" style="background: #522d6d">
+<nav x-data="{ open: false }" class="w-full bg-[#522d6d]">
     <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
+    <div class="w-full mx-auto px-2 sm:px-4 lg:px-8">
+        <div class="flex justify-between items-center h-16 flex-nowrap">
+            <div class="flex flex-1 items-center min-w-0">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                       <img src="{{ asset('images/logo-letra.png') }}" alt="Logo de la Aplicación" class="block h-12 w-auto">
+                       <img src="{{ asset('images/logo-letra.png') }}" alt="Logo de la Aplicación" class="block h-10 sm:h-12 w-auto">
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
-               <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+               <div class="flex space-x-1 sm:space-x-2 md:space-x-4 md:-my-px md:ml-4 lg:ml-6 overflow-x-auto overflow-y-hidden">
 
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <x-slot name="icon">
@@ -32,7 +32,7 @@
                     @if (Auth::user()->hasRole(['admin', 'production']))
                         <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
                             <x-slot name="icon">
-                                <span class="text-2x1 text-purple-600">📋</span>
+                                <span class="text-2xl text-purple-600">📋</span>
                             </x-slot>
                             {{ __('Categorías') }}
                         </x-nav-link>
@@ -48,14 +48,14 @@
                     @if (Auth::user()->hasRole('admin'))
                         <x-nav-link :href="route('admin.branches.index')" :active="request()->routeIs('admin.branches.*')">
                             <x-slot name="icon">
-                                <span class="text-2x1 text-red-600">🏢</span>
+                                <span class="text-2xl text-red-600">🏢</span>
                             </x-slot>
                             {{ __('Sucursales') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             <x-slot name="icon">
-                                <span class="text-2x1 text-cyan-600">👨‍💼</span>
+                                <span class="text-2xl text-cyan-600">👨‍💼</span>
                             </x-slot>
                             {{ __('Usuarios') }}
                         </x-nav-link>
@@ -64,13 +64,14 @@
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="hidden md:flex md:items-center md:ml-2 lg:ml-6 flex-shrink-0">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+                        <button class="inline-flex items-center px-2 sm:px-3 py-2 border border-transparent text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150 whitespace-nowrap">
+                            <div class="hidden sm:block">{{ Auth::user()->name }}</div>
+                            <div class="block sm:hidden">👤</div>
 
-                            <div class="ms-1">
+                            <div class="ml-1 hidden sm:block">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -98,7 +99,7 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
+            <div class="-mr-2 flex items-center md:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -110,7 +111,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Menu') }}
