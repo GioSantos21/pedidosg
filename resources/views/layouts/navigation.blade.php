@@ -24,7 +24,9 @@
 
                     <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
                         <x-slot name="icon">
-                            <span class="text-2xl text-blue-600">📦</span>
+                            <img src="{{ asset('images/order.png') }}"
+                                alt="Icono de Pedidos"
+                                class="w-7 h-7" style="">
                         </x-slot>
                         {{ __('Pedidos') }}
                     </x-nav-link>
@@ -32,14 +34,18 @@
                     @if (Auth::user()->hasRole(['admin', 'production']))
                         <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
                             <x-slot name="icon">
-                                <span class="text-2xl text-purple-600">📋</span>
+                                <img src="{{ asset('images/category.png') }}"
+                                    alt="Icono de category"
+                                    class="w-6 h-6" style="">
                             </x-slot>
                             {{ __('Categorías') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">
                             <x-slot name="icon">
-                                <span class="text-2xl text-green-600">🍰</span>
+                                <img src="{{ asset('images/product.png') }}"
+                                    alt="Icono de product"
+                                    class="w-7 h-7" style="">
                             </x-slot>
                             {{ __('Productos') }}
                         </x-nav-link>
@@ -48,14 +54,18 @@
                     @if (Auth::user()->hasRole('admin'))
                         <x-nav-link :href="route('admin.branches.index')" :active="request()->routeIs('admin.branches.*')">
                             <x-slot name="icon">
-                                <span class="text-2xl text-red-600">🏢</span>
+                                <img src="{{ asset('images/branch.png') }}"
+                                    alt="Icono de branch"
+                                    class="w-6 h-6" style="">
                             </x-slot>
                             {{ __('Sucursales') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             <x-slot name="icon">
-                                <span class="text-2xl text-cyan-600">👨‍💼</span>
+                                <img src="{{ asset('images/users.png') }}"
+                                    alt="Icono de users"
+                                    class="w-6 h-6" style="">
                             </x-slot>
                             {{ __('Usuarios') }}
                         </x-nav-link>
