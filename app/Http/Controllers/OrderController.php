@@ -357,22 +357,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-
-        // Base de la consulta: Pedidos con usuario y sucursal cargados
-        $query = Order::with(['user', 'branch'])
-            ->orderBy('id', 'desc'); // Ordenar por más reciente
-
-        if ($user->role === 'manager') {
-            // Gerente: Solo ve sus pedidos de su sucursal
-            $query->where('branch_id', $user->branch_id);
-        }
-
-        // Si es 'admin' o 'production', ven todos los pedidos
-
-        $orders = $query->paginate(15); // Paginación
-
-        return view('orders.index', compact('orders'));
+        return view('orders.index');
     }
 
     /**

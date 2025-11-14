@@ -11,8 +11,7 @@ class ProductController extends Controller
     // Muestra la lista de productos (Ya implementado, se mantiene)
     public function index()
     {
-        $products = Product::with('category')->paginate(10);
-        return view('admin.products.index', compact('products'));
+        return view('admin.products.index');
     }
 
     // Muestra el formulario para crear un nuevo producto

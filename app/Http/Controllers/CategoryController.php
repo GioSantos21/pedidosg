@@ -10,8 +10,7 @@ class CategoryController extends Controller
     // Muestra la lista de categorías (Ya implementado, se mantiene)
     public function index()
     {
-        $categories = Category::paginate(10);
-        return view('admin.categories.index', compact('categories'));
+        return view('admin.categories.index');
     }
 
     // Muestra el formulario para crear una nueva categoría

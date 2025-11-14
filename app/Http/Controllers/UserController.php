@@ -17,9 +17,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        // Cargamos la relación 'branch' para mostrar el nombre de la sucursal
-        $users = User::with('branch')->paginate(15);
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index');
     }
 
     /**

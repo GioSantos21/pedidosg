@@ -13,13 +13,12 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained()->onDelete('cascade'); // Clave foránea al Pedido
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');; // Producto solicitado
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');;
             $table->integer('quantity'); // Cantidad
             $table->decimal('cost_at_order', 8, 2)->default(0.00);
 
-            // 'unit' almacena la unidad de medida utilizada ('Kg', 'Lt', 'Unidad', etc.)
-            // Esto asegura que la cantidad sea clara para el historial.
+
             $table->string('unit', 20)->default('Unidad');
 
             $table->timestamps();
