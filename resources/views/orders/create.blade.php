@@ -65,14 +65,14 @@
                     @endif
 
                     <!-- 2. Tabla de Productos y Cantidades -->
-                    <div class="overflow-x-auto shadow-md sm:rounded-lg rounded-lg">
+                    <div class="overflow-x-auto border-gray-200 rounded-lg shadow-md">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-[#522d6d]">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Producto</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Existencias Actuales</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Cantidad a Solicitar</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Código</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Nombre del Producto</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Existencias Actuales</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider w-1/5">Cantidad a Solicitar</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -80,7 +80,7 @@
                                     <tr>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900" x-text="product.code"></td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800" x-text="product.name"></td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500" x-text="product.stock"></td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800" x-text="product.stock"></td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm">
                                             <!-- Campo de Cantidad: Usa x-bind:value para prellenar si hay data en la sesión -->
                                             <input type="number"
@@ -102,7 +102,7 @@
                                     <!-- Fila cuando no hay resultados de búsqueda -->
                                 <template x-if="filteredProducts.length === 0">
                                     <tr>
-                                        <td colspan="4" class="px-4 py-4 text-center text-gray-500">
+                                        <td colspan="4" class="px-4 py-4 text-center text-gray-800">
                                             No se encontraron productos que coincidan con la búsqueda.
                                         </td>
                                     </tr>
@@ -117,9 +117,11 @@
                             Guardar Línea y Volver a Categorías
                         </button>
 
-                        <!-- Botón para volver al índice de categorías -->
-                        <a href="{{ route('orders.createIndex') }}" class="text-sm text-gray-600 hover:text-gray-900 px-4 py-2">
-                            Volver a Categorías
+
+
+                        <a href="{{ route('orders.createIndex') }}"
+                            class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
+                           Volver a Categorías
                         </a>
                     </div>
                 </form>

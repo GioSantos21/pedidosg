@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             <!-- SECCIÓN DE BIENVENIDA Y MENSAJE DE EMPRESA -->
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-8 p-6 border-b-4 border-yellow-500">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-8 p-6 border-b-4 border-purple-700">
                 <h3 class="text-2xl font-bold text-gray-800 mb-2">
                     Bienvenido, {{ Auth::user()->name }}
                 </h3>
