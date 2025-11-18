@@ -71,7 +71,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Código</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Nombre del Producto</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Existencias Actuales</th>
+                                    <th class="px-4 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">Existencias Actuales</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider w-1/5">Cantidad a Solicitar</th>
                                 </tr>
                             </thead>
@@ -80,7 +80,7 @@
                                     <tr>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900" x-text="product.code"></td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800" x-text="product.name"></td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800" x-text="product.stock"></td>
+                                        <td class="px-4 py-2 text-center whitespace-nowrap text-sm text-gray-800" x-text="product.stock"></td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm">
                                             <!-- Campo de Cantidad: Usa x-bind:value para prellenar si hay data en la sesión -->
                                             <input type="number"

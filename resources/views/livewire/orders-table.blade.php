@@ -30,8 +30,8 @@
                             <th class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">ID Pedido</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Sucursal / Gerente</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Fecha Solicitud</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Items</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Estado</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">Items</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">Estado</th>
                             <th class="px-6 py-3 text-xs text-white uppercase">Acciones</th>
                         </tr>
                     </thead>
@@ -48,7 +48,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $order->created_at->format('d/m/Y H:i') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="px-6 py-4 text-center whitespace-nowrap text-sm text-gray-900">
                                     {{ $order->orderItems ? $order->orderItems->sum('quantity') : 0 }} unidades
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">

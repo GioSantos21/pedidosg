@@ -10,7 +10,7 @@ class Branch extends Model
     use HasFactory; // Añadido
 
     // 1. Campos que se pueden llenar
-    protected $fillable = ['name', 'address', 'phone', 'is_active'];
+    protected $fillable = ['name', 'address', 'phone', 'is_active','external_code'];
 
     // 2. Relación: Una sucursal tiene muchos usuarios (gerentes)
     public function users()

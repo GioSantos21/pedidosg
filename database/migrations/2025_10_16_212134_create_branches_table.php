@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->string('external_code')->nullable();
             $table->timestamps();
         });
 

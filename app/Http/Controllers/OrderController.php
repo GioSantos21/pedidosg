@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\InventoryService;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Category;
@@ -21,16 +22,24 @@ class OrderController extends Controller
     /**
      * Muestra la lista de categorías para empezar un nuevo pedido.
      */
-    public function createIndex()
+    public function createIndex(InventoryService $inventoryService)
     {
-        // 🚨 SEGURIDAD: Solo permitir acceso a usuarios con rol 'manager'
         if (!Auth::check() || Auth::user()->role !== 'manager') {
             return redirect()->route('orders.index')->with('error', 'Solo los gerentes pueden iniciar nuevos pedidos.');
         }
 
+        $user = Auth::user();
         $categories = Category::all();
-        // Contar ítems en la cesta de la sesión para mostrarlos en el botón de Finalizar
         $cartCount = collect(session('order_cart', []))->sum('quantity');
+
+        // ===================================================================
+        // 🚀 PETICIÓN DE STOCK EN EL ÍNDICE (Punto 1)
+        // ===================================================================
+        if ($user->branch && $user->branch->external_code) {
+            // Llamamos al servicio. El servicio internamente manejará la caché de 10 minutos.
+            $inventoryService->getStock($user->branch->external_code);
+        }
+        // ===================================================================
 
         return view('orders.create-index', compact('categories', 'cartCount'));
     }
@@ -39,64 +48,84 @@ class OrderController extends Controller
      * Muestra el formulario con los productos de una categoría específica.
      * @param int $categoryId El ID de la categoría (línea de producción)
      */
-     public function create(int $categoryId)
-        {
-            // 🚨 SEGURIDAD: Solo permitir acceso a usuarios con rol 'manager'
-            if (!Auth::check() || Auth::user()->role !== 'manager') {
-                return redirect()->route('orders.index')->with('error', 'Acceso denegado a la creación de pedidos.');
-            }
 
-            // 1. Obtener la Categoría
-            $category = Category::find($categoryId);
-
-            if (!$category) {
-                return redirect()->route('orders.createIndex')->with('error', 'Línea de categoría no válida.');
-            }
-
-            // 2. Obtener productos activos de la categoría
-            $rawProducts = Product::where('category_id', $categoryId)
-                                ->where('is_active', true)
-                                ->orderBy('name') // Ordeno por nombre para mejor UX
-                                ->get();
-
-            if ($rawProducts->isEmpty()) {
-                return redirect()->route('orders.createIndex')->with('info', "No hay productos activos disponibles para la línea de {$category->name}.");
-            }
-
-            $categoryName = $category->name;
-            // Asumo que tu ruta espera el ID de categoría como lineNumber para la URL de vuelta.
-            $lineNumber = $categoryId;
-
-            // 3. Obtener la cesta actual de la sesión
-            // Uso 'order_cart' como clave, consistente con tu código.
-            $cart = session('order_cart', []);
-            $cartCount = collect($cart)->count(); // Contamos el número de ítems únicos
-
-            // 4. Mapear y Normalizar Productos (SOLUCIÓN AL PROBLEMA)
-            // Convertimos cada objeto Eloquent a un array limpio que Alpine.js pueda consumir
-            // y le inyectamos la cantidad de la cesta.
-            $products = $rawProducts->map(function ($product) use ($cart) {
-                // Buscamos la cantidad en la cesta usando 'product_code' como clave de sesión
-                $quantityInCart = $cart[$product->product_code]['quantity'] ?? 0;
-
-                return [
-                    // Estos 4 campos son los que la vista (create.blade.php) necesita en Alpine:
-                    'code' => $product->product_code, // Clave de identificación
-                    'name' => $product->name,
-                    'stock' => $product->stock ?? 0, // Importante: Asume una columna 'stock'. Si no existe, usa 0.
-                    'quantity' => $quantityInCart,
-                ];
-            });
-
-            // La colección $products tiene ahora la cantidad pre-llenada y está en formato array.
-            return view('orders.create', [
-                // Pasamos $products (ahora una colección de arrays normalizados)
-                'products' => $products->toArray(),
-                'categoryName' => $categoryName,
-                'lineNumber' => $lineNumber,
-                'cartCount' => $cartCount
-            ]);
+    public function create(int $categoryId, InventoryService $inventoryService)
+    {
+        // 🚨 SEGURIDAD: Solo permitir acceso a usuarios con rol 'manager'
+        if (!Auth::check() || Auth::user()->role !== 'manager') {
+            return redirect()->route('orders.index')->with('error', 'Acceso denegado a la creación de pedidos.');
         }
+
+        // 1. Obtener la Categoría y productos locales
+        $category = Category::find($categoryId);
+        $rawProducts = Product::where('category_id', $categoryId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        if ($rawProducts->isEmpty()) {
+            return redirect()->route('orders.createIndex')->with('info', "No hay productos activos disponibles para la línea de {$category->name}.");
+        }
+
+        $categoryName = $category->name;
+        $lineNumber = $categoryId;
+        $cart = session('order_cart', []);
+        $cartCount = collect($cart)->count();
+
+        // ============================================================
+        // 🚀 LÓGICA DE STOCK EN TIEMPO REAL (AHORA LEE DESDE LA SESIÓN)
+        // ============================================================
+
+        $user = Auth::user();
+        $externalStock = [];
+
+        if ($user->branch && $user->branch->external_code) {
+            $cacheKey = 'inventory_stock_' . $user->branch->external_code;
+
+            // Obtenemos los datos del JSON completo guardado en la sesión.
+            // La API se llama ahora solo en OrderController@createIndex (al entrar al menú).
+            $apiResponse = session($cacheKey)['data'] ?? null;
+
+            if ($apiResponse) {
+                // Navegamos dentro del JSON para obtener la lista de productos
+                $apiData = $apiResponse['data']['bodega'] ?? [];
+
+                // Procesamos la lista para obtener ['CODIGO_PRODUCTO' => EXISTENCIAS]
+                foreach ($apiData as $item) {
+                    $code = $item['codigo_producto'] ?? null; // Usamos la clave correcta del JSON
+                    $qty  = $item['existencias'] ?? 0;       // Usamos la clave correcta del JSON
+
+                    if ($code) {
+                        $externalStock[$code] = $qty;
+                    }
+                }
+            }
+        }
+        // ============================================================
+
+        // 4. Mapear y Normalizar Productos (cruzando los datos)
+        $products = $rawProducts->map(function ($product) use ($cart, $externalStock) {
+
+            $quantityInCart = $cart[$product->product_code]['quantity'] ?? 0;
+
+            // Buscamos si el stock está en el array de la API o usamos 0
+            $realStock = $externalStock[$product->product_code] ?? 0;
+
+            return [
+                'code' => $product->product_code,
+                'name' => $product->name,
+                'stock' => $realStock, // <--- Stock actualizado desde la caché de sesión
+                'quantity' => $quantityInCart,
+            ];
+        });
+
+        return view('orders.create', [
+            'products' => $products->toArray(),
+            'categoryName' => $categoryName,
+            'lineNumber' => $lineNumber,
+            'cartCount' => $cartCount
+        ]);
+    }
 
     /**
      * Añade o actualiza productos de una categoría en la cesta de la sesión.
@@ -254,35 +283,73 @@ class OrderController extends Controller
     /**
      * Muestra el formulario para editar un pedido existente.
      */
-    public function edit(Order $order)
-    {
-        // Solo permitir edición si el pedido está Pendiente
-        if (strtolower($order->status) !== 'pendiente') {
-            return redirect()->route('orders.show', $order)
-                ->with('error', 'No se puede editar un pedido que no esté en estado "Pendiente".');
-        }
+            public function edit(Order $order, InventoryService $inventoryService)
+                {
+                    // 1. Verificación de Estado (Si no es Pendiente, no se puede editar)
+                    if (strtolower($order->status) !== 'pendiente') {
+                        return redirect()->route('orders.show', $order)
+                            ->with('error', 'No se puede editar un pedido que no esté en estado "Pendiente".');
+                    }
 
-        // 1. Prepara los ítems actuales del pedido para Alpine.js ($orderItems)
-        $orderItems = $order->orderItems->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'name' => $item->product->name,
-                'unit' => $item->product->unit,
-                'quantity' => $item->quantity,
-            ];
-        })->toArray();
+                    // 2. Cargar las relaciones necesarias
+                    $order->load(['orderItems.product', 'user', 'branch']);
 
-        // 2. Carga TODOS los productos con la relación de categoría para el filtrado en la vista
-        $products = Product::with('category:id,name')
-                            ->select('id', 'name', 'product_code', 'unit', 'category_id')
-                            ->get();
+                    // ============================================================
+                    // 🚀 LÓGICA DE STOCK EN TIEMPO REAL (INICIO)
+                    // ============================================================
 
-        // 3. Carga todas las categorías para el selector principal
-        $categories = Category::select('id', 'name')->get();
+                    $user = Auth::user();
+                    $externalStock = [];
+                    $allProducts = Product::select('id', 'name', 'product_code', 'unit', 'category_id')->get();
 
-        // 4. Pasa todas las variables necesarias a la vista
-        return view('orders.edit', compact('order', 'orderItems', 'products', 'categories'));
-    }
+                    // Obtenemos el stock solo si el usuario tiene una sucursal con código externo
+                    if ($user->branch && $user->branch->external_code) {
+                        $apiResponse = $inventoryService->getStock($user->branch->external_code);
+                        $apiData = $apiResponse['data']['bodega'] ?? [];
+
+                        foreach ($apiData as $item) {
+                            $code = $item['codigo_producto'] ?? null;
+                            $qty  = $item['existencias'] ?? 0;
+                            if ($code) {
+                                $externalStock[$code] = $qty;
+                            }
+                        }
+                    }
+
+                    // 3. Mapear TODOS los productos del catálogo (PARA EL SELECTOR Y LA BÚSQUEDA)
+                    $productsWithStock = $allProducts->map(function ($product) use ($externalStock) {
+                        $realStock = $externalStock[$product->product_code] ?? $product->stock ?? 0;
+
+                        // Devolvemos el producto con el stock actualizado
+                        $product->stock = $realStock;
+
+                        return $product;
+                    });
+
+                    // ============================================================
+                    // 🚀 LÓGICA DE STOCK EN TIEMPO REAL (FIN)
+                    // ============================================================
+
+                    // 4. Prepara los ítems actuales del pedido
+                    $orderItems = $order->orderItems->map(function ($item) {
+                        return [
+                            'product_id' => $item->product_id,
+                            'name' => $item->product->name,
+                            'unit' => $item->product->unit,
+                            'quantity' => $item->quantity,
+                        ];
+                    })->toArray();
+
+                    // 5. Carga todas las categorías
+                    $categories = Category::select('id', 'name')->get();
+
+                    // 6. Pasamos el catálogo completo al frontend
+                    return view('orders.edit', compact('order', 'orderItems'))
+                        ->with([
+                            'products' => $productsWithStock, // <-- Catálogo COMPLETO CON STOCK REAL
+                            'categories' => $categories,
+                        ]);
+                }
 
     /**
      * Actualiza el pedido en la base de datos.

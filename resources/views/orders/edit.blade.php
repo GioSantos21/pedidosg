@@ -189,7 +189,7 @@
                                 <select x-model="selectedProductId" id="product_select" class="w-full flex-grow h-10 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
                                     <option value="">-- Selecciona un producto --</option>
                                     <template x-for="product in filteredProducts()" :key="product.id">
-                                        <option :value="product.id" x-text="product.product_code + ' - ' + product.name + ' (' + product.unit + ')'"></option>
+                                        <option :value="product.id" x-text="product.product_code + ' - ' + product.name + ' (' + product.unit + ') [Stock: ' + (product.stock || 0) + ']'"></option>
                                     </template>
                                 </select>
                                 <button type="button" @click="addItem(selectedProductId)" :disabled="!selectedProductId" class="inline-flex items-center flex-shrink-0 h-10 px-4 py-2 bg-purple-400 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-500 active:bg-purple-950 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-75 transition ease-in-out duration-150 shadow-md">
@@ -208,42 +208,37 @@
                                     <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">CÓDIGO</th>
                                     <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">NOMBRE DEL PRODUCTO</th>
                                     <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">UNIDAD</th>
+                                    <th class="px-6 py-3 text-center text-sm font-bold text-white uppercase tracking-wider">EXISTENCIAS</th>
                                     <th class="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">CANTIDAD</th>
                                     <th class="px-6 py-3 text-leff text-sm font-bold text-white uppercase tracking-wider">ACCIÓN</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                           <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="item.product_id">
                                     <tr>
-                                        <!-- Campo Oculto para Product ID -->
                                         <input type="hidden" :name="'orderItems[' + index + '][product_id]'" :value="item.product_id">
 
-                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="item.name"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900" x-text="item.unit"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-base  ">
-                                            <!-- Campo de Cantidad -->
-                                            <input type="number"
-                                                   :name="'orderItems[' + index + '][quantity]'"
-                                                   x-model.number="item.quantity"
-                                                   min="1"
-                                                   class="w-20 text-center border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm p-2 text-base">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="allProducts.find(p => p.id == item.product_id)?.product_code"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.unit"></td>
+
+                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold">
+                                            <span x-text="allProducts.find(p => p.id == item.product_id)?.stock || 0"></span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            <!-- Botón de Eliminar Corregido -->
+
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <input type="number"
+                                                    :name="'orderItems[' + index + '][quantity]'"
+                                                    x-model.number="item.quantity"
+                                                    min="1"
+                                                    class="w-20 text-center border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm p-2 text-sm">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button type="button" @click="removeItem(index)" class="text-red-600 hover:text-red-900 font-bold">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                                 </svg>
                                             </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <!-- Mensaje si la tabla está vacía -->
-                                <template x-if="items.length === 0">
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                            No hay productos en el pedido.
                                         </td>
                                     </tr>
                                 </template>
