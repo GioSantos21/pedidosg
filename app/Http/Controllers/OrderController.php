@@ -90,13 +90,20 @@ class OrderController extends Controller
                 // Navegamos dentro del JSON para obtener la lista de productos
                 $apiData = $apiResponse['data']['bodega'] ?? [];
 
-                // Procesamos la lista para obtener ['CODIGO_PRODUCTO' => EXISTENCIAS]
+                // Procesamos la lista para obtener ['CODIGO' => CANTIDAD REAL]
                 foreach ($apiData as $item) {
-                    $code = $item['codigo_producto'] ?? null; // Usamos la clave correcta del JSON
-                    $qty  = $item['existencias'] ?? 0;       // Usamos la clave correcta del JSON
+                    $code = $item['codigo_producto'] ?? null;
+
+                    // Obtenemos los valores. Usamos (float) para asegurar que se sumen correctamente.
+                    $existencias_apertura = (float)($item['existencias'] ?? 0);
+                    $entradas_hoy = (float)($item['entradashoy'] ?? 0);
+                    $salidas_hoy = (float)($item['salidashoy'] ?? 0);
+
+                    // Calculamos el stock en tiempo real
+                    $stock_en_tiempo_real = $existencias_apertura + $entradas_hoy - $salidas_hoy;
 
                     if ($code) {
-                        $externalStock[$code] = $qty;
+                        $externalStock[$code] = $stock_en_tiempo_real; // <--- GUARDAMOS EL VALOR CALCULADO
                     }
                 }
             }
@@ -307,11 +314,20 @@ class OrderController extends Controller
                         $apiResponse = $inventoryService->getStock($user->branch->external_code);
                         $apiData = $apiResponse['data']['bodega'] ?? [];
 
+                        // Procesamos la lista para obtener ['CODIGO' => CANTIDAD REAL]
                         foreach ($apiData as $item) {
                             $code = $item['codigo_producto'] ?? null;
-                            $qty  = $item['existencias'] ?? 0;
+
+                            // Obtenemos los valores. Usamos (float) para asegurar que se sumen correctamente.
+                            $existencias_apertura = (float)($item['existencias'] ?? 0);
+                            $entradas_hoy = (float)($item['entradashoy'] ?? 0);
+                            $salidas_hoy = (float)($item['salidashoy'] ?? 0);
+
+                            // Calculamos el stock en tiempo real
+                            $stock_en_tiempo_real = $existencias_apertura + $entradas_hoy - $salidas_hoy;
+
                             if ($code) {
-                                $externalStock[$code] = $qty;
+                                $externalStock[$code] = $stock_en_tiempo_real; // <--- GUARDAMOS EL VALOR CALCULADO
                             }
                         }
                     }

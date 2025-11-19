@@ -1,7 +1,6 @@
 @props(['active'])
 
 @php
-// --- ESTE ES EL CÓDIGO CORREGIDO ---
 
 // Clases para el enlace INACTIVO (texto claro)
 $inactiveClasses = 'block w-full pl-3 pr-4 py-2 border-l-4 border-transparent text-left text-base font-medium text-gray-300 hover:text-white hover:bg-purple-700 focus:outline-none focus:text-white focus:bg-purple-700 focus:border-purple-700 transition duration-150 ease-in-out';

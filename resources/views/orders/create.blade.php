@@ -84,12 +84,12 @@
                                         <td class="px-4 py-2 whitespace-nowrap text-sm">
                                             <!-- Campo de Cantidad: Usa x-bind:value para prellenar si hay data en la sesión -->
                                             <input type="number"
-                                                     :name="'quantities[' + product.code + '][quantity]'"
-                                                     min="0"
-                                                     placeholder="0"
-                                                     :value="product.quantity > 0 ? product.quantity : ''"
-                                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-center rounded-lg"
-                                                     :class="{'border-red-500': hasErrorForProduct(product.code)}">
+                                                :name="'quantities[' + product.code + '][quantity]'"
+                                                min="0"
+                                                placeholder="0"
+                                                x-model.number="product.quantity"
+                                                class="w-full text-center border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm"
+                                                :class="{'border-red-500': hasErrorForProduct(product.code)}">
 
                                             <!-- Campo oculto para asegurar que el código de producto se envíe -->
                                             <input type="hidden"
