@@ -42,6 +42,8 @@ Route::middleware('auth')->group(function () {
 
     // ----------------------------------------------------------------------
 
+    Route::get('orders/{order}/report', [OrderController::class, 'printReport'])->name('orders.report');
+    Route::get('orders/{order}/download', [OrderController::class, 'downloadReport'])->name('orders.download');
 
     // RUTAS DE PEDIDOS RESTANTES (CRUD)
     // Usamos 'only' para que no cree rutas duplicadas para 'store', ya que la definimos arriba.

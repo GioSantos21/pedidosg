@@ -23,7 +23,7 @@
             {{-- Contenedor del Logo --}}
             <div>
                 <a href="/">
-                    <img src="{{ asset('images/logo-anthonys.png') }}" alt="Anthony's Logo" class="h-32 object-contain">
+                    <img src="{{ asset('images/logo-anthonys-fondoMorado.png') }}" alt="Anthony's Logo" class="h-32 object-contain">
                 </a>
             </div>
 
