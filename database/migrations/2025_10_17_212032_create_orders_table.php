@@ -15,11 +15,14 @@ return new class extends Migration
         $table->id();
         $table->foreignId('branch_id')->constrained(); // Sucursal que pide
         $table->foreignId('user_id')->constrained(); // Gerente que registra
+        $table->foreignId('confirmed_by_user_id')->nullable()->constrained('users');
         $table->foreignId('category_id')->constrained();
         $table->enum('status', ['Pendiente', 'Confirmado', 'Anulado'])->default('Pendiente');
         $table->text('notes')->nullable();
         $table->timestamp('requested_at')->useCurrent();
         $table->timestamp('completed_at')->nullable();
+        $table->enum('orderType', ['Materia Prima', 'Insumos', 'Papeleria', 'Produccion'])->default('Produccion');
+        $table->string('correlative_number', 50)->nullable()->unique();
         $table->timestamps();
     });
     }

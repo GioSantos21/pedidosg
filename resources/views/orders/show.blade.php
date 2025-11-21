@@ -1,4 +1,4 @@
-<x-app-layout><x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Detalle del Pedido #') . $order->id }}</h2></x-slot><div class="py-12">
+<x-app-layout><x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Detalle del Pedido #') . $order->correlative_number }}</h2></x-slot><div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         {{-- Mensajes de Sesión --}}
         @if (session('success'))
@@ -52,7 +52,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-b pb-6">
                 <div>
                     <p class="text-sm font-medium text-gray-900">ID de Pedido</p>
-                    <p class="text-2xl font-bold text-gray-900">#{{ $order->id }}</p>
+                    <p class="text-base font-bold text-gray-900">#{{ $order->correlative_number }}</p>
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-900">Fecha de Solicitud</p>

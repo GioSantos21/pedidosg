@@ -45,7 +45,7 @@
                         @forelse ($orders as $order)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    #{{ $order->id }}
+                                    #{{ $order->correlative_number }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-indigo-700">{{ $order->branch->name ?? 'N/A' }}

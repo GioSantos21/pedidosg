@@ -20,6 +20,9 @@ class Order extends Model
         'notes',
         'status',
         'requested_at',
+        'correlative_number',
+        'completed_at',
+        'confirmed_by_user_id',
     ];
 
     /**
@@ -63,5 +66,8 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-
+    public function confirmedBy()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by_user_id');
+    }
 }

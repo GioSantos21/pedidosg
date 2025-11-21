@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\CorrelativeService;
 
 class OrderController extends Controller
 {
@@ -210,22 +211,19 @@ class OrderController extends Controller
             return redirect()->route('orders.createIndex')->with('error', 'Usuario o Sucursal no asignada. No se puede crear el pedido.');
         }
 
-        // 🚨 SOLUCIÓN AL ERROR: Obtener el category_id del primer ítem del carrito
+        // Obtener el category_id del primer ítem del carrito
         $firstItem = reset($cart);
         $categoryId = $firstItem['category_id'] ?? null;
 
         if (!$categoryId) {
-            // Si el carrito está vacío o mal formado, redireccionar
             return redirect()->back()->with('error', 'No se pudo determinar la línea (categoría) del pedido. Intenta vaciar el carrito y empezar de nuevo.');
         }
 
-        // 3. Preparar datos de OrderItem, asegurando que se guarden datos del Producto
+        // 3. Preparar datos de OrderItem
         $orderItemsData = [];
         foreach ($cart as $item) {
             $quantity = (int) $item['quantity'];
             $productId = $item['product_id'] ?? $item['id'] ?? null;
-
-            // Asumiendo que 'cost' y 'unit' se guardaron previamente en el método addItem
             $costAtOrder = $item['cost'] ?? 0.00;
             $unitUsed = $item['unit'] ?? 'Unidad';
 
@@ -233,7 +231,6 @@ class OrderController extends Controller
                 $orderItemsData[] = [
                     'product_id' => $productId,
                     'quantity' => $quantity,
-                    // Si estas columnas existen en order_items, se deben pasar:
                     'cost_at_order' => $costAtOrder,
                     'unit' => $unitUsed,
                     'created_at' => now(),
@@ -247,47 +244,54 @@ class OrderController extends Controller
             return redirect()->route('orders.createIndex')->with('error', 'El pedido final está vacío después de la limpieza de datos.');
         }
 
+        // ------------------------------------------------------------------
+        // 💡 INICIO DE LA LÓGICA DEL CORRELATIVO Y TRANSACCIÓN
+        // ------------------------------------------------------------------
         try {
             DB::beginTransaction();
 
-            // 4. Crear la Orden Principal y PASAR el category_id
+            // 4. Generar el Correlativo (SEGURO dentro de la transacción)
+            $correlativeService = new CorrelativeService($branchId);
+            $correlativeNumber = $correlativeService->getCorrelative();
+
+            if (!$correlativeNumber) {
+                // El servicio falla si no encuentra el registro o si excede el límite
+                DB::rollBack(); // Deshacemos cualquier bloqueo o cambio
+                return redirect()->back()->with('error', 'ERROR: No se pudo generar el número de pedido. Verifique la configuración de Correlativos.');
+            }
+
+            // 5. Crear la Orden Principal e incluir el nuevo campo
             $order = Order::create([
                 'branch_id' => $branchId,
                 'user_id' => $user->id,
                 'notes' => $request->input('notes'),
                 'status' => 'Pendiente',
                 'requested_at' => now(),
-                'category_id' => $categoryId, // <--- ¡La solución al error 1364!
+                'category_id' => $categoryId,
+                'correlative_number' => $correlativeNumber, // <-- CAMPO NUEVO Y ÚNICO
             ]);
 
-            // 5. Asignar order_id a los items
+            // 6. Asignar order_id a los items
             $finalOrderItems = array_map(function ($item) use ($order) {
                 $item['order_id'] = $order->id;
                 return $item;
             }, $orderItemsData);
 
-            // 6. Insertar los OrderItems masivamente
+            // 7. Insertar los OrderItems masivamente
             OrderItem::insert($finalOrderItems);
 
-            DB::commit();
+            DB::commit(); // Si todo fue bien, se guarda el pedido Y se incrementa el correlativo.
 
-            // 7. Limpiar la sesión y redirigir
+            // 8. Limpiar la sesión y redirigir
             session()->forget('order_cart');
-            return redirect()->route('orders.show', $order)->with('success', '¡Pedido Masivo Creado con Éxito!');
+            return redirect()->route('orders.show', $order)->with('success', '¡Pedido Masivo Creado con Éxito! Número: ' . $correlativeNumber);
         } catch (\Exception $e) {
-            DB::rollBack();
-            // 🚨 MODO DEBUG: Muestra el error exacto de la DB para que puedas revisarlo.
+            DB::rollBack(); // Si algo falla (pedido, correlativo, items), se deshace TODO.
             \Log::error('Fallo Crítico al Guardar el Pedido: ' . $e->getMessage() . ' en línea: ' . $e->getLine());
 
-            // 🚨 CAMBIO TEMPORAL: Esto mostrará el error real.
-            return redirect()->back()->with('error', 'ERROR DE BASE DE DATOS: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'ERROR DE BASE DE DATOS: Fallo al guardar el pedido. ' . $e->getMessage());
         }
     }
-    // =======================================================
-    // --- LÓGICA DE EDICIÓN Y ACTUALIZACIÓN ---
-    // (Traída del archivo NUEVO, que es más completa)
-    // =======================================================
-
     /**
      * Muestra el formulario para editar un pedido existente.
      */
@@ -424,7 +428,7 @@ class OrderController extends Controller
             return redirect()->route('orders.show', $order)->with('success', '¡Pedido actualizado con éxito!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al actualizar el pedido #' . $order->id . ': ' . $e->getMessage());
+            Log::error('Error al actualizar el pedido #' . $order->correlative_number . ': ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al actualizar el pedido. Revisa los datos y vuelve a intentarlo.');
         }
     }
@@ -470,23 +474,30 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, Order $order)
     {
-        // Asume que la validación de rol ya está en las rutas (web.php)
-
         $validated = $request->validate([
             'status' => ['required', Rule::in(['Pendiente', 'Confirmado', 'Anulado'])],
         ]);
 
         $updateData = ['status' => $validated['status']];
 
+        // Lógica para CONFIRMADO
         if ($validated['status'] === 'Confirmado') {
-            $updateData['completed_at'] = now();
-        } else {
+            $updateData['completed_at'] = now(); // Guarda la fecha/hora actual
+            $updateData['confirmed_by_user_id'] = Auth::id(); // Guarda el usuario actual (Admin/Producción)
+        }
+        // Lógica para PENDIENTE (Si se revierte la acción por error)
+        elseif ($validated['status'] === 'Pendiente') {
             $updateData['completed_at'] = null;
+            $updateData['confirmed_by_user_id'] = null;
+        }
+        // Para ANULADO, decidimos si mantenemos la fecha o no (usualmente no es necesario borrarla si ya estaba confirmada, pero aquí reiniciamos para limpieza)
+        elseif ($validated['status'] === 'Anulado') {
+            // Opcional: Puedes guardar quién anuló si quisieras, pero por ahora solo cambiamos estado
         }
 
         $order->update($updateData);
 
-        return redirect()->back()->with('success', "Estado del pedido #{$order->id} actualizado a '{$order->status}'.");
+        return redirect()->back()->with('success', "Estado del pedido #{$order->correlative_number} actualizado a '{$order->status}'.");
     }
 
     /**
@@ -522,51 +533,43 @@ class OrderController extends Controller
 
     public function printReport(Order $order)
     {
-        // 1. Cargar relaciones necesarias de una vez
-        $order->load(['user.branch', 'orderItems.product']);
+        // 1. Cargar relaciones (incluimos 'confirmedBy' para obtener el nombre)
+        $order->load(['user.branch', 'orderItems.product', 'confirmedBy']);
 
-        // 2. Lógica para el Número de Envío (Correlativo Faltante)
-        // NOTA: Asumiremos que el "Número de Envío" se genera/asigna cuando el pedido es Confirmado.
-        // Por ahora, usaremos el ID del pedido como un placeholder (ej. B0000000 + ID).
+        // 2. Lógica para el Número de Envío
         $numero_envio = 'N/A';
-        if ($order->status === 'Confirmado' || $order->status === 'Anulado') {
-            // En un sistema real, este número vendría de una columna 'shipment_number'
+        if ($order->status !== 'Pendiente') {
             $numero_envio = 'ENV-' . str_pad($order->id, 5, '0', STR_PAD_LEFT);
         }
 
-        // 3. Obtener el Nombre del Usuario que Confirma (Aún nos falta la columna en la BD)
-        // NOTA: Para el punto 4, necesitarías una columna 'confirmed_by_user_id' en la tabla 'orders'.
-        // Por ahora, lo dejaremos como un placeholder.
-        $usuario_confirmacion = 'N/A';
-
-        // 4. Lógica de Inventario (Campo Faltante)
-        // NOTA: El stock real (Existencias Actuales) solo se consulta en el momento de crear/editar (OrderController@edit).
-        // El reporte, por su naturaleza histórica, debería usar el stock que se registró en la tabla 'products'
-        // en ese momento, o un valor nulo. Para este reporte, lo pondremos en 0.00 como en tu captura.
+        // 3. Obtener el Usuario que Confirma (CORREGIDO)
+        // Si existe la relación confirmedBy, usamos su nombre. Si no, 'N/A'.
+        $usuario_confirmacion = $order->confirmedBy->name ?? 'N/A';
 
         return view('orders.report', compact('order', 'numero_envio', 'usuario_confirmacion'));
     }
 
     public function downloadReport(Order $order)
     {
-        // Cargar datos (usamos la misma lógica que en printReport)
-        $order->load(['user.branch', 'orderItems.product']);
+        // 1. Cargar datos (Igual que arriba, incluimos 'confirmedBy')
+        $order->load(['user.branch', 'orderItems.product', 'confirmedBy']);
 
-        // NOTA: Replicar lógica del número de envío y usuario de confirmación
+        // Lógica Envío
         $numero_envio = 'N/A';
         if ($order->status !== 'Pendiente') {
             $numero_envio = 'ENV-' . str_pad($order->id, 5, '0', STR_PAD_LEFT);
         }
-        $usuario_confirmacion = 'N/A'; // Usar lógica real aquí
 
-        // 1. Cargar la vista Blade sin renderizar
+        // 2. Lógica Usuario Confirmación (CORREGIDO)
+        $usuario_confirmacion = $order->confirmedBy->name ?? 'N/A';
+
+        // 3. Cargar la vista Blade
         $pdf = Pdf::loadView('orders.report', compact('order', 'numero_envio', 'usuario_confirmacion'))
-            ->setOption('isRemoteEnabled', false)   // Deshabilitar URLs remotas
-            ->setOption('isPhpEnabled', false)      // Seguridad
-            ->setOption('chroot', public_path());   // Permitir acceso a archivos en public/
+            ->setOption('isRemoteEnabled', true) // IMPORTANTE: true para imágenes
+            ->setOption('isPhpEnabled', false)
+            ->setOption('chroot', public_path());
 
-        // 2. Devolver la descarga con el nombre del archivo
-        $filename = 'Pedido-Anthony-' . $order->id . '.pdf';
+        $filename = 'Anthony-' . $order->correlative_number . '.pdf';
 
         return $pdf->stream($filename);
     }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Pedido #{{ $order->id }}</title>
+    <title>Reporte de Pedido #{{ $order->correlative_number }}</title>
 
     <style>
         /* Estilos generales para impresión (Dompdf compatible) */
@@ -25,9 +25,17 @@
 
         /* --- Estilo de la Cabecera de la Empresa --- */
         .header-section {
-            border-bottom: 2px solid #333;
+            border-bottom: 3px solid #522d6d;
+            padding-bottom: 65px;
+            margin-bottom: 15px;
+        }
+
+        .header-logo {
             padding-bottom: 45px;
             margin-bottom: 15px;
+            text-align: right;
+            float: right;
+
         }
 
         .header-left {
@@ -47,18 +55,18 @@
             width: 100%;
             border-collapse: collapse;
             /* Quita los bordes de la tabla de layout */
-            margin-bottom: 15px;
+            margin-bottom: 1px;
         }
 
         .data-table-layout td {
-            padding: 2px 0;
+            padding: 2px 0 0 0;
             border: none;
             line-height: 1.3;
         }
 
         .data-table-layout strong {
-            display: inline-block;
-            min-width: 160px;
+            //display: inline-block;
+            min-width: 100px;
             /* Asegura la alineación de las etiquetas */
             font-weight: bold;
         }
@@ -95,6 +103,15 @@
             font-weight: bold;
             padding-top: 8px;
         }
+
+        .valign-top {
+            vertical-align: top;
+        }
+
+        .spacer-top {
+            padding-top: 15px !important;
+            /* Fuerza el espacio arriba */
+        }
     </style>
 </head>
 
@@ -105,64 +122,66 @@
         <div class="header-section">
             <div class="header-left">
                 <h1 style="font-size: 14pt; margin: 0;">INVERSIONES ANTHONYS S.A. DE C.V.</h1>
-                <p style="margin-top: 5px;">Tipo de Pedido: **INSUMOS** (Ejemplo estático)</p>
+                <p style="margin-top: 10px;">Tipo de Pedido: {{ $order->orderType }} </p>
             </div>
-            <div class="header-right">
+            <div class="header-logo">
                 @php
                     $logoPath = public_path('images/logo-letraA-fondoMorado.svg');
                 @endphp
                 @if (file_exists($logoPath))
-                    <img src="{{ $logoPath }}" alt="Logo AN"
-                        style="height: 40px; display: inline-block;">
+                    <img src="{{ $logoPath }}" alt="Logo AN" style="height: 60px; display: inline-block;">
                 @else
-                    <span style="font-size:12px;">Logo AN</span>
+                    <span style="font-size:12px;">Logo Anthonys</span>
                 @endif
             </div>
         </div>
 
         <table class="data-table-layout">
             <tr>
-                <td style="width: 50%;">
-                    <strong>Número de Pedido:</strong> #{{ $order->id }}
+                <td style="width: 50%;" class="valign-top">
+                    <strong>Número de Pedido:</strong> {{ $order->correlative_number ?? '#' . $order->id }}
                 </td>
-                <td style="width: 50%;">
+                <td style="width: 50%;" class="valign-top">
                     <strong>Fecha en que se tomó:</strong>
                     {{ $order->requested_at->translatedFormat('l, d \d\e F \d\e Y') }}
                 </td>
             </tr>
             <tr>
-                <td>
+                <td class="valign-top">
                     <strong>Usuario que realizó el pedido:</strong> {{ $order->user->name ?? 'N/A' }}
                 </td>
-                <td>
+                <td class="valign-top">
                     <strong>Hora en que se tomó:</strong> {{ $order->requested_at->format('H:i:s') }}
                 </td>
             </tr>
             <tr>
-                <td colspan="2">
-                    <strong>Descripción:</strong> {{ $order->notes ?? 'N/A' }}
+                <td colspan="2" class="spacer-top valign-top">
+                    <strong>Descripción:</strong> {{ $order->notes ?? 'Ninguna' }}
                 </td>
             </tr>
         </table>
 
-        <h2 style="font-size: 11pt; margin-top: 20px; border-bottom: 1px solid #ddd;">Datos de Pedido:
-            #{{ $order->id }}</h2>
+        <h2 style="font-size: 11pt; margin-top: 20px; border-bottom: 3px solid #522d6d;">
+            Datos de Pedido: {{ $order->correlative_number ?? '#' . $order->id }}
+        </h2>
+
         <table class="data-table-layout">
             <tr>
-                <td style="width: 50%;">
-                    <strong>Procesado por Bodega:</strong> **{{ $order->status !== 'Pendiente' ? 'SI' : 'NO' }}**
+                <td style="width: 50%;" class="valign-top">
+                    <strong>Procesado por Bodega:</strong> {{ $order->status !== 'Pendiente' ? 'SI' : 'NO' }}
                 </td>
-                <td style="width: 50%;">
+                <td style="width: 50%;" class="valign-top">
                     <strong>Fecha en que se Confirmo:</strong>
-                    {{ $order->completed_at ? $order->completed_at->format('d/m/Y H:i') : 'N/A' }}
+                    {{ $order->completed_at ? $order->completed_at->format('d/m/Y - H:i:s') : 'N/A' }}
                 </td>
             </tr>
             <tr>
-                <td>
+                <td class="valign-top">
                     <strong>Número de Envío:</strong> {{ $numero_envio }}
                 </td>
-                <td>
-                    <strong>Usuario que confirmó el pedido:</strong> {{ $usuario_confirmacion }}
+                <td class="valign-top">
+                    <strong>Usuario que confirmó el pedido:</strong>
+                    {{ $order->confirmedBy->name ?? 'N/A' }}
                 </td>
             </tr>
         </table>

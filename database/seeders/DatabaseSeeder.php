@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         CategorySeeder::class,
         ProductSeeder::class,
     ]);
+    $this->call(CorrelativeSetupSeeder::class);
 
     // Crear un Administrador (role=admin)
     User::create([
