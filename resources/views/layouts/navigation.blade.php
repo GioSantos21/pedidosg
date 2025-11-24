@@ -149,6 +149,10 @@
                 <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                     {{ __('Usuarios') }}
                 </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.correlatives.index')" :active="request()->routeIs('admin.users.*')">
+                    {{ __('Correlativos') }}
+                </x-responsive-nav-link>
             @endif
         </div>
 

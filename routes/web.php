@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CorrelativeController;
 
 Route::redirect('/', '/login');
 
@@ -80,8 +81,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status');
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'create', 'store']);
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-    });
+        Route::patch('correlatives/{id}/toggle', [CorrelativeController::class, 'toggleStatus'])->name('correlatives.toggle');
 
+        Route::resource('correlatives', CorrelativeController::class);
+    });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

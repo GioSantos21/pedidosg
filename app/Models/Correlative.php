@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Correlative extends Model
 {
-    protected $fillable = ['branch_id', 'prefix', 'initial', 'final', 'counter', 'counter_record'];
+    protected $fillable = ['branch_id', 'prefix', 'initial', 'final', 'counter', 'counter_record', 'is_active'];
 
     public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
+
+     protected $casts = [
+        'is_active' => 'boolean'
+    ];
 }

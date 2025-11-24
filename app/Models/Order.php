@@ -70,4 +70,11 @@ class Order extends Model
     {
         return $this->belongsTo(User::class, 'confirmed_by_user_id');
     }
+
+    public function getRouteKeyName()
+    {
+        return 'correlative_number';
+    }
+
+
 }

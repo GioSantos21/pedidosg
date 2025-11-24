@@ -19,6 +19,8 @@ return new class extends Migration
             $table->unsignedBigInteger('final')->default(99999999);
             $table->unsignedBigInteger('counter')->default(0)->comment('El último número utilizado');
             $table->unsignedBigInteger('counter_record')->default(0)->comment('Contador de registros');
+            $table->boolean('is_active')->default(true);
+
 
             $table->timestamps();
         });

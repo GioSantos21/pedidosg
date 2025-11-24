@@ -96,6 +96,18 @@
                     </a>
                 @endif
 
+                @if (Auth::user()->role === 'admin')
+                    <a href="{{ route('admin.correlatives.index') }}" class="block p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02]">
+                        <div class="flex items-center space-x-4">
+                                <span class="text-4xl text-cyan-600">🔢</span>
+                            <div>
+                                <p class="text-xl font-semibold text-cyan-800">Gestión Correlativos</p>
+                                <p class="text-sm text-gray-500">Asignar números correlativos a las sucursales.</p>
+                            </div>
+                        </div>
+                    </a>
+                @endif
+
 
             </div>
             <!-- FIN DE ACCESOS RÁPIDOS -->
