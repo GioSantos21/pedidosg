@@ -72,13 +72,19 @@
                                         {{ $order->status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <a href="{{ route('orders.show', $order) }}"
-                                        class="text-indigo-600 hover:text-indigo-900">Ver Detalles</a>
-                                    <a href="{{ route('orders.download', $order) }}"
-                                        class="inline-flex items-center px-4 py-2 bg-red-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-900 transition ease-in-out duration-150">
-                                         Descargar PDF
-                                    </a>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex items-center justify-end space-x-4">
+
+                                        <a href="{{ route('orders.show', $order) }}"
+                                            class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                                            Ver Detalles
+                                        </a>
+
+                                        <a href="{{ route('orders.download', $order) }}"
+                                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-xs font-semibold text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 uppercase tracking-widest transition ease-in-out duration-150">
+                                            Descargar PDF
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
