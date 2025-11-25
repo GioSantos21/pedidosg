@@ -58,15 +58,10 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('error', 'Acceso denegado a la creación de pedidos.');
         }
 
-        // 1. Obtener la Categoría y productos locales
+        // 1. Obtener la Categoría (usada solo para el título/encabezado)
         $category = Category::find($categoryId);
-        $rawProducts = Product::where('category_id', $categoryId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        if ($rawProducts->isEmpty()) {
-            return redirect()->route('orders.createIndex')->with('info', "No hay productos activos disponibles para la línea de {$category->name}.");
+        if (!$category) {
+            return redirect()->route('orders.createIndex')->with('info', 'Categoría no encontrada.');
         }
 
         $categoryName = $category->name;
@@ -75,61 +70,45 @@ class OrderController extends Controller
         $cartCount = collect($cart)->count();
 
         // ============================================================
-        // 🚀 LÓGICA DE STOCK EN TIEMPO REAL (AHORA LEE DESDE LA SESIÓN)
+        // 🚀 Obtener LOS PRODUCTOS DIRECTAMENTE desde la API externa
+        //      (si la API responde, mostramos SOLO esos productos)
         // ============================================================
-
         $user = Auth::user();
-        $externalStock = [];
+        $products = [];
 
         if ($user->branch && $user->branch->external_code) {
-            $cacheKey = 'inventory_stock_' . $user->branch->external_code;
+            $apiResponse = $inventoryService->getStock($user->branch->external_code);
+            $apiData = $apiResponse['data']['bodega'] ?? [];
 
-            // Obtenemos los datos del JSON completo guardado en la sesión.
-            // La API se llama ahora solo en OrderController@createIndex (al entrar al menú).
-            $apiResponse = session($cacheKey)['data'] ?? null;
+            foreach ($apiData as $item) {
+                $code = $item['codigo_producto'] ?? null;
+                $name = $item['nombre'] ?? ($item['product_name'] ?? 'Sin nombre');
 
-            if ($apiResponse) {
-                // Navegamos dentro del JSON para obtener la lista de productos
-                $apiData = $apiResponse['data']['bodega'] ?? [];
+                $existencias_apertura = (float)($item['existencias'] ?? 0);
+                $entradas_hoy = (float)($item['entradashoy'] ?? 0);
+                $salidas_hoy = (float)($item['salidashoy'] ?? 0);
+                $stock_en_tiempo_real = $existencias_apertura + $entradas_hoy - $salidas_hoy;
 
-                // Procesamos la lista para obtener ['CODIGO' => CANTIDAD REAL]
-                foreach ($apiData as $item) {
-                    $code = $item['codigo_producto'] ?? null;
+                $quantityInCart = $cart[$code]['quantity'] ?? 0;
 
-                    // Obtenemos los valores. Usamos (float) para asegurar que se sumen correctamente.
-                    $existencias_apertura = (float)($item['existencias'] ?? 0);
-                    $entradas_hoy = (float)($item['entradashoy'] ?? 0);
-                    $salidas_hoy = (float)($item['salidashoy'] ?? 0);
-
-                    // Calculamos el stock en tiempo real
-                    $stock_en_tiempo_real = $existencias_apertura + $entradas_hoy - $salidas_hoy;
-
-                    if ($code) {
-                        $externalStock[$code] = $stock_en_tiempo_real; // <--- GUARDAMOS EL VALOR CALCULADO
-                    }
+                if ($code) {
+                    $products[] = [
+                        'code' => $code,
+                        'name' => $name,
+                        'stock' => $stock_en_tiempo_real,
+                        'quantity' => $quantityInCart,
+                    ];
                 }
             }
         }
-        // ============================================================
 
-        // 4. Mapear y Normalizar Productos (cruzando los datos)
-        $products = $rawProducts->map(function ($product) use ($cart, $externalStock) {
-
-            $quantityInCart = $cart[$product->product_code]['quantity'] ?? 0;
-
-            // Buscamos si el stock está en el array de la API o usamos 0
-            $realStock = $externalStock[$product->product_code] ?? 0;
-
-            return [
-                'code' => $product->product_code,
-                'name' => $product->name,
-                'stock' => $realStock, // <--- Stock actualizado desde la caché de sesión
-                'quantity' => $quantityInCart,
-            ];
-        });
+        // Si la API no devolvió productos, avisamos y no mostramos productos locales
+        if (empty($products)) {
+            return redirect()->route('orders.createIndex')->with('info', "No se encontraron productos en la API para la línea {$categoryName}.");
+        }
 
         return view('orders.create', [
-            'products' => $products->toArray(),
+            'products' => $products,
             'categoryName' => $categoryName,
             'lineNumber' => $lineNumber,
             'cartCount' => $cartCount
@@ -140,7 +119,7 @@ class OrderController extends Controller
      * Añade o actualiza productos de una categoría en la cesta de la sesión.
      * (Traído del archivo NUEVO, ya que usa la lógica de cesta/sesión)
      */
-    public function addItem(Request $request)
+    public function addItem(Request $request, InventoryService $inventoryService)
     {
         // 1. Validar que al menos se haya ingresado una cantidad mayor a 0
         $validatedData = $request->validate([
@@ -154,6 +133,14 @@ class OrderController extends Controller
         $newCart = session('order_cart', []);
         $itemsAddedCount = 0;
 
+        // Intentar obtener la respuesta de la API (si existe) para extraer nombres
+        $user = Auth::user();
+        $apiData = [];
+        if ($user && $user->branch && $user->branch->external_code) {
+            $apiResponse = $inventoryService->getStock($user->branch->external_code);
+            $apiData = $apiResponse['data']['bodega'] ?? [];
+        }
+
         foreach ($validatedData['quantities'] as $data) {
             $quantity = (int) $data['quantity'];
             $productCode = $data['product_code'];
@@ -161,6 +148,43 @@ class OrderController extends Controller
             if ($quantity > 0) {
                 // Si la cantidad es > 0, añadir o actualizar
                 $product = Product::where('product_code', $productCode)->first();
+
+                // Si no existe en la DB, intentar crear un registro mínimo usando la API
+                if (!$product) {
+                    // Buscar el nombre en los datos de la API (si está disponible)
+                    $found = null;
+                    foreach ($apiData as $item) {
+                        if (($item['codigo_producto'] ?? null) == $productCode) {
+                            $found = $item;
+                            break;
+                        }
+                    }
+
+                    $productName = $found['nombre'] ?? $productCode;
+
+                    // Si ya existe un producto con ese nombre, lo reutilizamos
+                    $existingByName = Product::where('name', $productName)->first();
+                    if ($existingByName) {
+                        $product = $existingByName;
+                        // Si el producto no tiene product_code, lo actualizamos
+                        if (empty($product->product_code)) {
+                            $product->product_code = $productCode;
+                            $product->save();
+                        }
+                    } else {
+                        // Crear registro mínimo
+                        $product = Product::create([
+                            'product_code' => $productCode,
+                            'name' => $productName,
+                            'category_id' => $validatedData['line_number'],
+                            'unit' => 'Unidad',
+                            'cost' => 0.00,
+                            'is_active' => true,
+                            'stock' => 0,
+                        ]);
+                    }
+                }
+
                 if ($product) {
                     $newCart[$productCode] = [
                         'product_id' => $product->id,
@@ -207,7 +231,7 @@ class OrderController extends Controller
         $user = Auth::user();
 
         if (!$user || !($branchId = $user->branch_id)) {
-            \Log::error('Intento de crear pedido por usuario sin branch_id.', ['user_id' => $user->id ?? 'Invitado']);
+            Log::error('Intento de crear pedido por usuario sin branch_id.', ['user_id' => $user->id ?? 'Invitado']);
             return redirect()->route('orders.createIndex')->with('error', 'Usuario o Sucursal no asignada. No se puede crear el pedido.');
         }
 
@@ -287,7 +311,7 @@ class OrderController extends Controller
             return redirect()->route('orders.show', $order)->with('success', '¡Pedido Masivo Creado con Éxito! Número: ' . $correlativeNumber);
         } catch (\Exception $e) {
             DB::rollBack(); // Si algo falla (pedido, correlativo, items), se deshace TODO.
-            \Log::error('Fallo Crítico al Guardar el Pedido: ' . $e->getMessage() . ' en línea: ' . $e->getLine());
+            Log::error('Fallo Crítico al Guardar el Pedido: ' . $e->getMessage() . ' en línea: ' . $e->getLine());
 
             return redirect()->back()->with('error', 'ERROR DE BASE DE DATOS: Fallo al guardar el pedido. ' . $e->getMessage());
         }

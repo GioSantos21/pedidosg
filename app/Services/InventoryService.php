@@ -12,7 +12,9 @@ class InventoryService
 
     public function __construct()
     {
-        $this->baseUrl = env('ADMINPOS_API_URL');
+        // Preferir la URL completa en .env llamada EXTERNAL_INVENTORY_URL
+        // Si no existe, intentar ADMINPOS_API_URL para compatibilidad
+        $this->baseUrl = env('EXTERNAL_INVENTORY_URL', env('ADMINPOS_API_URL'));
         $this->token = env('ADMINPOS_API_TOKEN');
     }
 
@@ -35,9 +37,20 @@ class InventoryService
 
         // 3. Si no existe o expiró, llamar a la API
         try {
+            // Normalizar la URL base para evitar duplicar segmentos o barras
+            $base = rtrim($this->baseUrl ?? '', '/');
+
+            // Si la URL base ya contiene el endpoint 'bodega_tiempo_real', solo anexamos el UUID
+            if (str_contains($base, 'bodega_tiempo_real')) {
+                $url = $base . '/' . ltrim($branchExternalCode, '/');
+            } else {
+                // Permitir que la URL en .env termine en la parte ".../bodega_tiempo_real/" o solo en el host
+                $url = $base . '/inventario/bodega_tiempo_real/' . ltrim($branchExternalCode, '/');
+            }
+
             $response = Http::withToken($this->token)
                 ->timeout(10)
-                ->get("{$this->baseUrl}/inventario/bodega_tiempo_real/{$branchExternalCode}");
+                ->get($url);
 
             if ($response->successful()) {
                 $apiResponse = $response->json();
